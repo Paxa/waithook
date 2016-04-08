@@ -1,0 +1,11 @@
+[package]
+name = "waithook"
+version = "0.1.0"
+authors = ["Pavel Evstigneev <pavel.evst@gmail.com>"]
+
+[dependencies]
+env_logger = "*"
+hyper = "0.8.0"
+rustc-serialize = "0.3.18"
+
+websocket = { git = "https://github.com/Paxa/rust-websocket.git" }

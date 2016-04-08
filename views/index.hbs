@@ -1,0 +1,17 @@
+<h1>Web Sockets</h1>
+
+<script>
+  var websocket = new WebSocket("ws://localhost:3012/test");
+
+  console.log('Socket Status: ' + websocket.readyState);
+
+  websocket.onmessage = function (event) {
+    console.log("Socket Message: " + event.data);
+  };
+
+  websocket.onopen = function () {
+    console.log('Socket Status: ' + websocket.readyState + ' (open)');
+    websocket.send("Hello Server");
+  };
+
+</script>

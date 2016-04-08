@@ -1,0 +1,158 @@
+            let validate_result = request.validate();
+            println!("WEB SOCKET 1");
+
+            
+            let mut response = WsResponse::new(request);
+            //let mut response = request.accept();
+            /*
+            WsResponse {
+                status: StatusCode::SwitchingProtocols,
+                headers: request.headers,
+                version: HttpVersion::Http11,
+                request: request
+            };
+            */
+
+            //WsResponse::new(request); //.accept();
+            println!("WEB SOCKET 2");
+
+            println!("WEB SOCKET 3");
+
+            if let Some(&WebSocketProtocol(ref protocols)) = headers.get() {
+                if protocols.contains(&("rust-websocket".to_string())) {
+                    // We have a protocol we want to use
+                    response.headers.set(WebSocketProtocol(vec!["rust-websocket".to_string()]));
+                }
+            }
+
+            /*
+            let mut client = response.send().unwrap();
+            let ip = client.get_mut_sender()
+                .get_mut()
+                .peer_addr()
+                .unwrap();
+
+            println!("Connection from {}", ip);
+
+            let (mut sender, mut receiver) = client.split();
+            */
+
+            let http_head = format!("{} {}\r\n{}\r\n",
+                response.version,
+                response.status,
+                response.headers.clone()
+            );
+
+            let (reader, writer) = response.into_inner();
+
+            if !headers.has::<header::Upgrade>() {
+                println!("NOT WEB SOCKET!!!!");
+                webserver::handle(&web_request, writer, reader);
+                return;
+            }
+
+            let mut sender = Sender::new(writer, false);
+            let mut receiver = Receiver::new(BufReader::new(reader), true);
+
+            let ip = sender.get_mut().peer_addr().unwrap();
+            println!("Connection from {}", ip);
+
+            match validate_result {
+                Ok(()) => {
+                    println!("Sending:\n{}", http_head);
+                    let send_res = sender.get_mut().write(http_head.as_bytes());
+                    match send_res {
+                        Ok(res) => {
+                            println!("Sender write: {}", res);
+                        },
+                        Err(err) => {
+                            println!("Sender error: {}", err);
+                        }
+                    };
+
+                    println!("All set!!!!");
+                }
+                Err(_) => {
+                    println!("WEB SOCKET NOT VALID!");
+                    sender.get_mut().write(b"HTTP/1.1 400 Bad Request\r\n");
+                    return;
+                }
+            }
+
+            println!("Initial Hello");
+            let message = Message::text("Hello".to_string());
+            sender.send_message(&message).unwrap();
+            println!("Initial Hello done");
+            //client.send_message(&message).unwrap();
+
+            //return;
+            for message_res in receiver.incoming_messages() {
+                println!("Got message {:?}", message_res);
+                match message_res {
+                    Ok(message) => {
+                        let message : Message = message;
+                        println!("Got message {:?}", message);
+                        //let message: Message = message_res.unwrap();
+                        return;
+                        /*
+                        match message.opcode {
+                            Type::Close => {
+                                let message = Message::close();
+                                sender.send_message(&message).unwrap();
+                                println!("Client {} disconnected", ip);
+                                return;
+                            },
+                            Type::Ping => {
+                                let message = Message::pong(message.payload);
+                                sender.send_message(&message).unwrap();
+                                //return true;
+                            },
+                            _ => {
+                                sender.send_message(&message).unwrap();
+                                //return true;
+                            }
+                        }
+                        */
+                        /*
+                        let res = handle_ws_message(message, sender, ip);
+                        if !res { return; }
+                        */
+
+                        /*
+                        match message {
+                            mut Message => {
+                                let res = handle_ws_message(message, sender, ip);
+                                if !res { return; }
+                            }
+                        }
+                        */
+                    },
+                    Err(err) => {
+                        println!("Error: {:?}", err);
+                        return;
+                    }
+                }
+            }
+        });
+    }
+}
+
+pub fn handle_ws_message(mut message : Message, mut sender : Sender<WebSocketStream>, ip : SocketAddr) -> bool {
+    match message.opcode {
+        Type::Close => {
+            let message = Message::close();
+            sender.send_message(&message).unwrap();
+            println!("Client {} disconnected", ip);
+            return false;
+        },
+        Type::Ping => {
+            let message = Message::pong(message.payload);
+            sender.send_message(&message).unwrap();
+            return true;
+        },
+        _ => {
+            sender.send_message(&message).unwrap();
+            return true;
+        }
+    }
+}
