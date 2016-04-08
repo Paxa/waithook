@@ -23,60 +23,12 @@ use webserver;
 use request_wrap::RequestWrap;
 use rustc_serialize::json;
 
-
-pub struct Channels {
-    pub senders : Vec<Sender<RequestWrap>>
-    //pub recievers : Ven<Receiver<RequestWrap>>
-}
-
-/*
-impl Channels {
-    pub fn new() -> Channels {
-        Channels {
-            senders: Vec::new()
-        }
-    }
-
-    pub fn subscribe(&mut self) -> Receiver<RequestWrap> {
-        let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
-        self.senders.push(sender);
-        reciever
-    }
-
-    pub fn publish(&mut self, request : RequestWrap) {
-        for sender in &self.senders {
-            sender.send(request);
-        }
-    }
-}
-*/
-
-pub fn run_server() {
+pub fn run_server(server_port : u16) {
     // Start listening for WebSocket connections
-    let ws_server = Server::bind("127.0.0.1:3012").unwrap();
-    let addr = SocketAddr::from_str("127.0.0.1:3012").unwrap();
+    let listen_address = format!("0.0.0.0:{}", server_port);
+    println!("Starting server on {}", listen_address);
+    let ws_server = Server::bind(SocketAddr::from_str(listen_address.as_str()).unwrap()).unwrap();
 
-    /*
-    let mut pipes = HashMap::new();
-    let shared_pipes = Arc::new(pipes);
-    */
-
-    //let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
-    //let mut listeners: Vec<SenderBox> = Vec::new();
-
-    /*
-    thread::spawn(move || {
-        for hook in reciever.recv() {
-            let message: Message = Message::text(hook.body);
-            for listener in listeners.iter() {
-                listener.send_message(message).unwrap();
-            }
-        }
-    });
-    */
-
-    //let channels = Channels::new();
-    //let shared_channels = Arc::new(channels);
     let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
     let subscribers : Vec<Sender<RequestWrap>> = Vec::new();
@@ -116,19 +68,6 @@ pub fn run_server() {
             let request = connection.unwrap().read_request().unwrap();
             let headers = request.headers.clone();
             let path = request.url.to_string();
-
-            /*
-            let mut channels = match shared_pipes.get(&path) {
-                Some(channels) => {
-                    channels
-                },
-                None => {
-                    let channels = Channels::new();
-                    pipes.insert(path, channels);
-                    &channels
-                }
-            };
-            */
 
             if !headers.has::<header::Upgrade>() {
 
@@ -198,28 +137,7 @@ pub fn run_server() {
                             println!("Recieve Error: {}", e);
                         }
                     }
-
                 }
-
-                /*
-                for message in receiver.incoming_messages() {
-                    let message: Message = message.unwrap();
-
-                    match message.opcode {
-                        Type::Close => {
-                            let message = Message::close();
-                            sender.send_message(&message).unwrap();
-                            println!("Client {} disconnected", ip);
-                            return;
-                        },
-                        Type::Ping => {
-                            let message = Message::pong(message.payload);
-                            sender.send_message(&message).unwrap();
-                        }
-                        _ => sender.send_message(&message).unwrap(),
-                    }
-                }
-                */
             }
         });
     }

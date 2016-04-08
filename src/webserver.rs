@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 use websocket_s;
 use request_wrap::RequestWrap;
-use websocket_s::Channels;
 
 pub fn handle(request: RequestWrap, mut writter: WebSocketStream, mut sender: Sender<RequestWrap>) {
     println!("{} {}", request.method, request.url);
@@ -20,7 +19,7 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, mut sender: Se
     //channels.publish(request);
     sender.send(request);
 
-    let body = "Hello world!\n";
+    let body = "OK\n";
 
     let response = format!("{}\r\n{}: {}\r\n\r\n{}",
         "HTTP/1.1 200 OK",
@@ -33,20 +32,4 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, mut sender: Se
     //try!(write!(writter, "{}", response));
     writter.flush();
     writter.shutdown(Shutdown::Both);
-
-    /*
-    let send_res = try!(write!(writter, "{}", response));
-
-    match send_res {
-        Ok(res) => {
-            println!("Sender write: {}", res);
-        },
-        Err(err) => {
-            println!("Sender error: {}", err);
-        }
-    };
-    */
-
-    //sender.shutdown();
-    //println!("{}", client);
 }
