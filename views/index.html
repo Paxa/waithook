@@ -1,7 +1,8 @@
 <h1>Web Sockets</h1>
 
 <script>
-  var websocket = new WebSocket("ws://" + window.location.host + "/test");
+  var wsProtocol = window.location.protocol == "http:" ? "ws:" : "wss:";
+  var websocket = new WebSocket(wsProtocol + "//" + window.location.host + "/test");
 
   console.log('Socket Status: ' + websocket.readyState);
 
