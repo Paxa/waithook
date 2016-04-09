@@ -1,7 +1,7 @@
 <h1>Web Sockets</h1>
 
 <script>
-  var websocket = new WebSocket("ws://localhost:3012/test");
+  var websocket = new WebSocket("ws://" + window.location.host + "/test");
 
   console.log('Socket Status: ' + websocket.readyState);
 
