@@ -2,8 +2,8 @@ use hyper::header;
 
 use std::fmt;
 use std::clone::Clone;
-use rustc_serialize::json;
-use rustc_serialize::Encodable;
+//use rustc_serialize::json;
+//use rustc_serialize::Encodable;
 
 //#[derive(RustcEncodable)]
 pub struct RequestWrap {
