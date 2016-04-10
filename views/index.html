@@ -1,18 +1,100 @@
 <h1>Web Sockets</h1>
 
+<section>
+  <header>
+    <input id="subscribe_path" />
+    <input id="subscribe_start" type="submit" value="Subscribe" autofocus>
+    <input id="subscribe_simulate" type="submit" value="Simulate Request" disabled>
+    <a id="sample_link" target="_blank">Generate Request</a>
+  </header>
+
+  <code>
+    <pre id="log">
+    </pre>
+  </code>
+</section>
+
+<style>
+  header {
+    padding: 10px;
+    background: #f5f5f5;
+  }
+  header a {
+    display: none;
+  }
+  header a[href] {
+    display: inline;
+  }
+  code pre div {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  code pre div:before {
+    content: attr(title);
+    display: block;
+    width: 70px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #5DB793;
+  }
+</style>
+
 <script>
-  var wsProtocol = window.location.protocol == "http:" ? "ws:" : "wss:";
-  var websocket = new WebSocket(wsProtocol + "//" + window.location.host + "/test");
 
-  console.log('Socket Status: ' + websocket.readyState);
+  var $ = function (selector) { return document.querySelector(selector); };
 
-  websocket.onmessage = function (event) {
-    console.log("Socket Message: " + event.data);
-  };
+  function subscribe() {
+    var path = $('#subscribe_path').value;
+    $('#subscribe_path').disabled = true;
 
-  websocket.onopen = function () {
-    console.log('Socket Status: ' + websocket.readyState + ' (open)');
-    websocket.send("Hello Server");
-  };
+    var wsProtocol = window.location.protocol == "http:" ? "ws:" : "wss:";
+    var websocket = new WebSocket(wsProtocol + "//" + window.location.host + "/" + path);
+
+    console.log('Socket Status: ' + websocket.readyState);
+
+    websocket.onmessage = function (event) {
+      console.log("Socket Message: " + event.data);
+
+      var line = document.createElement("DIV");
+      line.className = "in";
+      line.innerText = event.data;
+      var date = new Date();
+      line.title = "-> @ " + [date.getHours(), date.getMinutes(), date.getSeconds()].join(":");
+      $('#log').appendChild(line);
+    };
+
+    websocket.onopen = function () {
+      console.log('Socket Status: ' + websocket.readyState + ' (open)');
+      //websocket.send("Hello Server");
+      $('#subscribe_simulate').disabled = false;
+      $('#subscribe_simulate').focus();
+      $('#sample_link').href = "/" + path + "?query_args=123";
+    };
+  }
+
+  $('#subscribe_start').addEventListener('click', function () {
+    subscribe();
+    $('#subscribe_start').disabled = true;
+  }, false);
+
+  $('#subscribe_simulate').addEventListener('click', function () {
+    $('#subscribe_simulate').disabled = true;
+
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        $('#subscribe_simulate').disabled = false;
+      }
+    };
+
+    xhr.open("POST", "/" + $('#subscribe_path').value + "?foo=bar", true);
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.send(JSON.stringify({
+      type: "Testing Request",
+      time: new Date()
+    }, null, 2));
+  }, false);
+
+  $('#subscribe_path').value = "testing_" + Math.round(Math.random() * 1000);
 
 </script>
