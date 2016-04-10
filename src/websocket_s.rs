@@ -26,6 +26,11 @@ fn extract_path(url : String) -> String {
     url[0 .. url.find('?').unwrap_or(url.len())].to_string()
 }
 
+fn pretty_json(request : RequestWrap) -> String {
+    let encoder = json::as_pretty_json(&request);
+    format!("{}", encoder)
+}
+
 pub fn run_server(server_port : u16) {
     // Start listening for WebSocket connections
     let listen_address = format!("0.0.0.0:{}", server_port);
@@ -118,7 +123,8 @@ pub fn run_server(server_port : u16) {
 
                 let (channel_sender, channel_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
-                if true {
+                // block to make sure listeners are unblocked
+                {
                     let mut listerners_wrap = local_subscribers.lock().unwrap();
                     let mut listerners = listerners_wrap.deref_mut();
                     listerners.push(channel_sender);
@@ -135,13 +141,7 @@ pub fn run_server(server_port : u16) {
                                 if extract_path(request.url.clone()) == path {
                                     println!("WS {} Got message {:?}", path, request);
 
-                                    let message_row = match json::encode(&request) {
-                                        Ok(jsoned) => { jsoned },
-                                        Err(e) => {
-                                            println!("WS json error {}", e);
-                                            String::new()
-                                        }
-                                    };
+                                    let message_row = pretty_json(request);
                                     let message: Message = Message::text(message_row);
 
                                     req_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap();
