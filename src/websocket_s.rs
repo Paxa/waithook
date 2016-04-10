@@ -20,7 +20,11 @@ use hyper::header;
 
 use webserver;
 use request_wrap::RequestWrap;
-//use rustc_serialize::json;
+use rustc_serialize::json;
+
+fn extract_path(url : String) -> String {
+    url[0 .. url.find('?').unwrap_or(url.len())].to_string()
+}
 
 pub fn run_server(server_port : u16) {
     // Start listening for WebSocket connections
@@ -127,15 +131,19 @@ pub fn run_server(server_port : u16) {
                         let request = channel_reciever.recv();
                         match request {
                             Ok(request) => {
-                                if request.url == path {
+                                if extract_path(request.url.clone()) == path {
                                     println!("WS {} Got message {:?}", path, request);
 
-                                    let message_row = format!("{} {}\n{:?}\n\n{}",
-                                        request.method, request.url, request.headers, request.body);
+                                    let message_row = match json::encode(&request) {
+                                        Ok(jsoned) => { jsoned },
+                                        Err(e) => {
+                                            println!("WS json error {}", e);
+                                            String::new()
+                                        }
+                                    };
                                     let message: Message = Message::text(message_row);
 
                                     req_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap();
-                                    //ws_sender.send_message(&message).unwrap();
                                 }
                             },
                             Err(e) => {

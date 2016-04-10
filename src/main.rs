@@ -2,7 +2,6 @@
 
 extern crate hyper;
 extern crate env_logger;
-//extern crate handlebars_iron as hbs;
 extern crate websocket;
 extern crate rustc_serialize;
 
