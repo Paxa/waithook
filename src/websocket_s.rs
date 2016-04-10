@@ -109,6 +109,7 @@ pub fn run_server(server_port : u16) {
                     .unwrap();
 
                 println!("WS Connection from {}", client_ip);
+                println!("WS Headers: {:?}", headers);
 
                 let message: Message = Message::text("Hello".to_string());
                 client.send_message(&message).unwrap();
