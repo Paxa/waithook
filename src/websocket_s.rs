@@ -116,9 +116,6 @@ pub fn run_server(server_port : u16) {
                 println!("WS Connection from {}", client_ip);
                 println!("WS Headers: {:?}", headers);
 
-                let message: Message = Message::text("Hello".to_string());
-                client.send_message(&message).unwrap();
-
                 let (ws_sender, mut ws_receiver) = client.split();
 
                 let (channel_sender, channel_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
