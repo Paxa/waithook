@@ -5,7 +5,7 @@ dependencies = [
  "env_logger 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "websocket 0.16.1 (git+https://github.com/Paxa/rust-websocket.git)",
+ "websocket 0.17.1 (git+https://github.com/Paxa/rust-websocket.git)",
 ]
 
 [[package]]
@@ -18,17 +18,17 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "bitflags"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "bitflags"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "byteorder"
-version = "0.4.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -101,6 +101,16 @@ dependencies = [
  "typeable 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicase 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 0.5.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "idna"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-bidi 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-normalization 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -345,6 +355,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "url"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "idna 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "user32-sys"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -369,18 +388,18 @@ dependencies = [
 
 [[package]]
 name = "websocket"
-version = "0.16.1"
-source = "git+https://github.com/Paxa/rust-websocket.git#2492743b9f0743dee75760b555692ec79325129a"
+version = "0.17.1"
+source = "git+https://github.com/Paxa/rust-websocket.git#ee9279089424a8961a6df711ab0a1dce3f5d5c41"
 dependencies = [
- "bitflags 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "byteorder 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "net2 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicase 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.5.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
