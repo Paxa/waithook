@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Waithook</title>
+  <link rel="stylesheet" type="text/css" href="/@/bulma.css">
+  <link rel="stylesheet" type="text/css" href="/@/highlight-github.css">
+  <link rel="stylesheet" type="text/css" href="/@/style.css">
+  <link rel="icon" type="image/png" href="/@/favicon.ico">
+</head>
+
+<body class="layout-default">
+  <section class="hero container section wh-header">
+    <header>
+      <h1 class="title">WaitHook</h1>
+      <h2 class="subtitle">Web Hook to Websocket Transmiting Service</h2>
+    </header>
+  </section>
+
+  <section class="hero is-info is-bold">
+    <div class="description container hero-body">
+      <strong>Waithook</strong> was build to ease receiving HTTP notifications in development and testing environment. It allows you to set web hook URL once and recieve requests from any location. The advantage of using <strong>WebSocket</strong> &mdash; it can work behind NAT or Firewall or Proxy.
+      <br/>
+      <br/>
+      <strong>1.</strong> Open WebSocket connection to <span class="code">wss://waithook.herokuapp.com/$your_unique_name</span><br/>
+      <strong>2.</strong> Send request to <span class="code">https://waithook.herokuapp.com/$your_unique_name</span><br/>
+      <strong>3.</strong> You got it!<br/>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="online-demo container">
+      <h3 class="title is-4">Online Demo</h3>
+      <div class="control is-grouped is-horizontal">
+        <div class="control-label">
+          <label class="label" for="subscribe_path">Path Prefix</label>
+        </div>
+        <div class="control">
+          <input id="subscribe_path" class="input" />
+        </div>
+      </div>
+
+      <div class="control is-grouped is-horizontal buttons">
+        <div class="control">
+          <input id="subscribe_start" type="submit" value="Subscribe" autofocus class="button is-success">
+          &nbsp;&rarr;&nbsp;
+          <input id="subscribe_simulate" type="submit" value="Simulate Request" disabled class="button is-info">
+          &nbsp;
+          <a id="sample_link" target="_blank" disabled class="button is-info">Generate Request</a>
+        </div>
+      </div>
+
+      <code>
+        <span>Output:</span>
+        <pre id="log">
+        </pre>
+      </code>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+        <p>
+          <strong>Waithook</strong> by <a href="http://jgthms.com">Pavel Evstigneev</a>. The source code is licensed
+          <a href="http://opensource.org/licenses/mit-license.php">MIT</a>.
+        </p>
+        <p>
+          <iframe class="github-btn" src="https://ghbtns.com/github-btn.html?user=paxa&repo=waithook&type=star&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="105px" height="20px"></iframe>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+<script src="/@/index.js"></script>
+<script src="/@/highlight.pack.js" async></script>

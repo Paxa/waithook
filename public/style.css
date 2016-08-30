@@ -1,0 +1,88 @@
+html {
+  background: #fff;
+}
+body {
+  background: #fff;
+  height: 100%;
+}
+
+.wh-header {
+  padding-left: 0;
+}
+
+div.description {
+  font-size: 15px;
+}
+
+div.description strong {
+  color: #fff;
+}
+
+span.code {
+  text-decoration: underline;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.online-demo label {
+  width: 100px;
+  text-align: left;
+}
+
+.online-demo .control-label {
+  width: auto;
+  flex-grow: 0;
+}
+
+.online-demo .buttons {
+  padding-left: 120px;
+}
+
+.online-demo code {
+  display: block;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 20px;
+  min-height: 150px;
+  background: #f7f9fa;
+}
+
+.online-demo code pre#log {
+  background: transparent;
+  color: black;
+}
+
+code pre div {
+  position: relative;
+  margin-bottom: 16px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  padding: 6px;
+  line-height: 1.41em;
+}
+code pre div:before {
+  content: attr(title);
+  display: block;
+  width: 140px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #5DB793;
+  padding-bottom: 3px;
+}
+
+code pre div + div {
+  padding-top: 22px;
+  border-top: 1px dashed #ccc;
+}
+
+.hljs {
+  padding-top: 22px;
+  background: transparent;
+}
+
+.container {
+  max-width: 800px;
+}
+
+footer.footer {
+  padding-bottom: 40px;
+}
