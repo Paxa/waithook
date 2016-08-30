@@ -15,7 +15,6 @@ use websocket::server::Response as WsResponse;
 use websocket::message::Type;
 use websocket::header::{WebSocketProtocol};
 
-use hyper::net::NetworkStream;
 use hyper::header;
 
 use webserver;
@@ -49,7 +48,7 @@ pub fn run_server(server_port : u16) {
 
             match request {
                 Ok(request) => {
-                    println!("Got message {:?}", request);
+                    println!("Got message {:?} from {:?}", request, request.client_ip);
 
                     let mut listerners_wrap = broker_subscribers.lock().unwrap();
                     let listerners = listerners_wrap.deref_mut();
@@ -86,7 +85,8 @@ pub fn run_server(server_port : u16) {
                     method: request.method.as_ref().to_string(),
                     url: request.url.to_string(),
                     headers: request.headers.clone(),
-                    body: request.body.clone()
+                    body: request.body.clone(),
+                    client_ip: request.get_reader().peer_addr().unwrap().clone().ip()
                 };
 
                 let response = WsResponse::bad_request(request);

@@ -2,6 +2,7 @@ use hyper::header::Headers;
 
 use std::fmt;
 use std::clone::Clone;
+use std::net::IpAddr;
 
 use std::collections::HashMap;
 use rustc_serialize::{Encodable, Encoder};
@@ -11,6 +12,7 @@ pub struct RequestWrap {
     pub url: String,
     pub headers: Headers,
     pub body: String,
+    pub client_ip: IpAddr
 }
 
 
@@ -56,7 +58,8 @@ impl Clone for RequestWrap {
             method: self.method.clone(),
             url: self.url.clone(),
             headers: self.headers.clone(),
-            body: self.body.clone()
+            body: self.body.clone(),
+            client_ip: self.client_ip.clone()
         }
     }
 }

@@ -5,8 +5,8 @@ authors = ["Pavel Evstigneev <pavel.evst@gmail.com>"]
 
 [dependencies]
 env_logger = "*"
-hyper = "0.8.0"
-rustc-serialize = "0.3.18"
+hyper = "0.9.10"
+rustc-serialize = "0.3.19"
 
 websocket = { git = "https://github.com/Paxa/rust-websocket.git" }
 #websocket = { path = "./rust-websocket" }
