@@ -1,3 +1,4 @@
 target
 hyper
 rust-websocket
+test_client/node_modules
