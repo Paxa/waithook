@@ -388,7 +388,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "websocket"
 version = "0.17.1"
-source = "git+https://github.com/Paxa/rust-websocket.git#ee9279089424a8961a6df711ab0a1dce3f5d5c41"
+source = "git+https://github.com/Paxa/rust-websocket.git#23ffcbf0e969b16fe2746bebd1503d873a5de62e"
 dependencies = [
  "bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",

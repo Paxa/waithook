@@ -14,6 +14,7 @@ use websocket::Sender as WsiSender;
 use websocket::server::Response as WsResponse;
 use websocket::message::Type;
 use websocket::header::{WebSocketProtocol};
+use websocket::result::WebSocketError;
 
 use hyper::header;
 
@@ -30,6 +31,12 @@ fn pretty_json(request : RequestWrap) -> String {
     format!("{}", encoder)
 }
 
+// Just wrapper, so I can remove listener from array when connection is closed
+struct SenderAndIp {
+    pub sender: Sender<RequestWrap>,
+    pub ip: SocketAddr
+}
+
 pub fn run_server(server_port : u16) {
     // Start listening for WebSocket connections
     let listen_address = format!("0.0.0.0:{}", server_port);
@@ -38,7 +45,7 @@ pub fn run_server(server_port : u16) {
 
     let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
-    let subscribers : Vec<Sender<RequestWrap>> = Vec::new();
+    let subscribers : Vec<SenderAndIp> = Vec::new();
     let subscribers_shared = Arc::new(Mutex::new(subscribers));
 
     let broker_subscribers = subscribers_shared.clone();
@@ -51,16 +58,26 @@ pub fn run_server(server_port : u16) {
                     println!("Got message {:?} from {:?}", request, request.client_ip);
 
                     let mut listerners_wrap = broker_subscribers.lock().unwrap();
-                    let listerners = listerners_wrap.deref_mut();
+                    let mut listerners = listerners_wrap.deref_mut();
 
                     println!("Send message to {} listeners", listerners.len());
-                    for listerner in listerners {
-                        //println!("Send message to listener");
-                        match listerner.send(request.clone()) {
-                            Ok(_) => {},
-                            Err(e) => { println!("Channel send error: {}", e); }
+
+                    listerners.retain(|ref listerner| {
+                        println!("Send message to listener {}", listerner.ip);
+                        match listerner.sender.send(request.clone()) {
+                            Ok(_) => { true },
+                            Err(e) => {
+                                println!("Channel send error: {}", e);
+                                if format!("{}", e) == "sending on a closed channel" {
+                                    println!("Remove listener from list {}", listerner.ip);
+                                    false
+                                } else {
+                                    true
+                                }
+                            }
                         }
-                    }
+                    });
+                    println!("total listeners: {}", listerners.len());
                 },
                 Err(e) => {
                     println!("Recieve Error: {}", e);
@@ -119,12 +136,19 @@ pub fn run_server(server_port : u16) {
                 let (ws_sender, mut ws_receiver) = client.split();
 
                 let (channel_sender, channel_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
+                //let channel_sender_ref = &channel_sender;
+
+                let sender_and_ip = SenderAndIp {
+                    sender: channel_sender,
+                    ip: client_ip.clone()
+                };
 
                 // block to make sure listeners are unblocked
                 {
                     let mut listerners_wrap = local_subscribers.lock().unwrap();
                     let mut listerners = listerners_wrap.deref_mut();
-                    listerners.push(channel_sender);
+                    //listerners.push(channel_sender);
+                    listerners.push(sender_and_ip);
                 }
 
                 let ws_sender_shared = Arc::new(Mutex::new(ws_sender));
@@ -141,42 +165,106 @@ pub fn run_server(server_port : u16) {
                                     let message_row = pretty_json(request);
                                     let message: Message = Message::text(message_row);
 
-                                    req_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap();
+                                    match req_local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
+                                        Ok(status) => {
+                                            println!("WS Broadcast to {} success: {:?}", client_ip, status);
+                                        },
+                                        Err(e) => {
+                                            println!("WS Broadcast to {} failed: {:?} {}", client_ip, e, e);
+                                            match e {
+                                                WebSocketError::IoError(err) => {
+                                                    println!("WS Broadcast WebSocketError::IoError error: {:?} {}", err, err);
+                                                    println!("WS Stoping broadcast loop");
+                                                    break
+                                                },
+                                                _ => {
+                                                    println!("WS Broadcast error: {:?} {}", e, e);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             },
                             Err(e) => {
-                                println!("WS Recieve Error: {}", e);
+                                println!("WS Recieve Error: {:?} {}", e, e);
+                                if format!("{}", e) == "receiving on a closed channel" {
+                                    println!("WS Channel is closed, quiting!");
+                                    break;
+                                }
+                                /*
+                                match e {
+                                    Error(e) => {
+                                        println!("WS Recieve Error: {:?} {} {}", e, e, e.description);
+                                    },
+                                    _ => {
+                                        println!("WS Recieve Error: {:?} {}", e, e);
+                                    }
+                                }
+                                */
+                                //println!("WS Recieve Error: {:?} {} {}", e, e, e.description);
+                                /*
+                                if e.is(RecvError) {
+                                    done = true;
+                                    println!("WS Channel is closed, quiting!");
+                                }
+                                */
                             }
                         }
                     }
                 });
 
-                // Keep alive thing
-                let pong_local_ws_sender = ws_sender_shared.clone();
+                let local_ws_sender = ws_sender_shared.clone();
                 thread::spawn(move || {
                     for message in ws_receiver.incoming_messages() {
+                        println!("d1");
                         let message: Message = message.unwrap();
-
+                        println!("WS Got message {} {:?} {:?}", message.opcode, message.cd_status_code, message.payload);
                         match message.opcode {
                             Type::Close => {
                                 let message = Message::close();
-                                //sender.send_message(&message).unwrap();
                                 println!("WS Client {} disconnected", client_ip);
-                                pong_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap();
+                                println!("d2");
+                                match local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
+                                    Ok(_) => { println!("WS send close ok") },
+                                    Err(e) => { println!("WS Error while sending close message {:?} {}", e, e) }
+                                }
+
+                                // block to make sure listeners are unblocked
+                                {
+                                    println!("WS Remove from listeners");
+                                    let mut listerners_wrap = local_subscribers.lock().unwrap();
+                                    let mut listerners = listerners_wrap.deref_mut();
+                                    //listerners.push(channel_sender);
+                                    let index = listerners.iter().position(|ref r| r.ip == client_ip );
+                                    match index {
+                                        Some(i) => {
+                                            println!("WS Remove listener {}", i);
+                                            listerners.remove(i);
+                                        },
+                                        None => {
+                                            println!("WS Can not find listerner in a list");
+                                        }
+                                    }
+                                }
                                 return;
                             },
                             Type::Ping => {
                                 println!("WS Got PING from {}", client_ip);
                                 let message = Message::pong(message.payload);
                                 //sender.send_message(&message).unwrap();
-                                pong_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap()
+                                match local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
+                                    Ok(_) => { println!("WS send pong ok") },
+                                    Err(e) => { println!("WS Error while sending pong {:?} {}", e, e) }
+                                }
                             },
                             Type::Pong => {
                                 println!("WS Got PONG from {}", client_ip);
                             },
                             _ => {
-                                pong_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap()
-                                //sender.send_message(&message).unwrap()
+                                match local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
+                                    Ok(_) => { println!("WS send same ok {}", message.opcode) },
+                                    Err(e) => { println!("WS Error while sending same message {} {:?} {}", message.opcode, e, e) }
+                                }
                             }
                         }
                     }
@@ -189,8 +277,25 @@ pub fn run_server(server_port : u16) {
                     loop {
                         println!("WS Sending PING to {}", ping_client_ip);
                         let message = Message::ping(b"PING".to_vec());
-                        ping_local_ws_sender.lock().unwrap().deref_mut().send_message(&message).unwrap();
-                        thread::sleep(Duration::from_millis(30 * 1000));
+                        match ping_local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
+                            Ok(status) => {
+                                println!("WS Ping success: {:?}", status);
+                            },
+                            Err(e) => {
+                                println!("WS Ping failed: {:?} {}", e, e);
+                                match e {
+                                    WebSocketError::IoError(err) => {
+                                        println!("WS Ping WebSocketError::IoError error: {:?} {}", err, err);
+                                        println!("WS Stoping ping loop");
+                                        break
+                                    },
+                                    _ => {
+                                        println!("WS Ping error: {:?} {}", e, e);
+                                    }
+                                }
+                            }
+                        }
+                        thread::sleep(Duration::from_millis(10 * 1000));
                     }
                 });
 
