@@ -191,23 +191,6 @@ pub fn run_server(server_port : u16) {
                                     println!("WS Channel is closed, quiting!");
                                     break;
                                 }
-                                /*
-                                match e {
-                                    Error(e) => {
-                                        println!("WS Recieve Error: {:?} {} {}", e, e, e.description);
-                                    },
-                                    _ => {
-                                        println!("WS Recieve Error: {:?} {}", e, e);
-                                    }
-                                }
-                                */
-                                //println!("WS Recieve Error: {:?} {} {}", e, e, e.description);
-                                /*
-                                if e.is(RecvError) {
-                                    done = true;
-                                    println!("WS Channel is closed, quiting!");
-                                }
-                                */
                             }
                         }
                     }
