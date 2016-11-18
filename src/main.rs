@@ -17,12 +17,12 @@ fn get_server_port() -> u16 {
 //use std::sync::{Arc, Mutex};
 
 mod webserver;
-mod websocket_s;
+mod websocket_server;
 mod request_wrap;
 
 
 fn main() {
     env_logger::init().unwrap();
 
-    websocket_s::run_server(get_server_port());
+    websocket_server::run_server(get_server_port());
 }
