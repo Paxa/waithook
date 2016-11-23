@@ -26,6 +26,25 @@ fn get_file_body(filepath: &str) -> Result<String, io::Error> {
     Ok(body)
 }
 
+pub fn create_http_response(body: String, extra_headers: &str) -> String {
+    if extra_headers == "" {
+        format!("{}\r\n{}\r\n{}: {}\r\n\r\n{}",
+            "HTTP/1.1 200 OK",
+            "Connection: close",
+            "Content-Length", body.len(),
+            body
+        )
+    } else {
+        format!("{}\r\n{}\r\n{}: {}\r\n{}\r\n\r\n{}",
+            "HTTP/1.1 200 OK",
+            "Connection: close",
+            "Content-Length", body.len(),
+            extra_headers,
+            body
+        )
+    }
+}
+
 pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
 
@@ -78,8 +97,9 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
 
         let body = "OK\n";
 
-        format!("{}\r\n{}: {}\r\n\r\n{}",
+        format!("{}\r\n{}\r\n{}: {}\r\n\r\n{}",
             "HTTP/1.1 200 OK",
+            "Connection: close",
             "Content-Length", body.len(),
             body
         )

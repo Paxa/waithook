@@ -4,6 +4,7 @@ extern crate hyper;
 extern crate env_logger;
 extern crate websocket;
 extern crate rustc_serialize;
+extern crate time;
 
 use std::env;
 use std::str::FromStr;
@@ -17,12 +18,14 @@ fn get_server_port() -> u16 {
 //use std::sync::{Arc, Mutex};
 
 mod webserver;
-mod websocket_server;
+mod waithook_server;
+mod waithook_utils;
+mod waithook_stats;
 mod request_wrap;
 
 
 fn main() {
     env_logger::init().unwrap();
 
-    websocket_server::run_server(get_server_port());
+    waithook_server::run_server(get_server_port());
 }
