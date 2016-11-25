@@ -56,12 +56,7 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
             }
         };
 
-        format!("{}\r\n{}: {}\r\n{}\r\n\r\n{}",
-            "HTTP/1.1 200 OK",
-            "Content-Length", body.len(),
-            "Content-Type: text/html",
-            body
-        )
+        create_http_response(body, "Content-Type: text/html")
     } else if request.url.starts_with("/@/") {
         let (_, filename) = request.url.split_at(3);
         let body = match get_file_body(filename) {
@@ -83,29 +78,16 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
             content_type = "image/x-icon"
         }
 
-        format!("{}\r\n{}: {}\r\n{}: {}\r\n\r\n{}",
-            "HTTP/1.1 200 OK",
-            "Content-Length", body.len(),
-            "Content-Type", content_type,
-            body
-        )
+        create_http_response(body, &format!("Content-Type: {}", content_type))
     } else {
         match sender.send(request) {
             Ok(_) => {},
             Err(e) => { println!("HTTP Channel send error: {}", e); }
         }
 
-        let body = "OK\n";
-
-        format!("{}\r\n{}\r\n{}: {}\r\n\r\n{}",
-            "HTTP/1.1 200 OK",
-            "Connection: close",
-            "Content-Length", body.len(),
-            body
-        )
+        create_http_response("OK\n".to_string(), "Content-Type: text/plain")
     };
 
-    //println!("Sending:\n{}", response);
     match writter.write(raw_response.as_bytes()) {
         Ok(_) => {},
         Err(e) => { println!("HTTP Socket write error: {}", e); }

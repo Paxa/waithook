@@ -21,9 +21,10 @@ use waithook_utils;
 use waithook_stats;
 
 pub type SharedSender = Arc<Mutex<WsClientSender<WebSocketStream>>>;
+pub type SubscribersLock = Arc<Mutex<Vec<Subscriber>>>;
 
 // Just wrapper, so I can remove listener from array when connection is closed
-pub struct SenderAndIp {
+pub struct Subscriber {
     pub sender: Sender<RequestWrap>,
     pub ip: SocketAddr,
     pub path: String
@@ -37,7 +38,7 @@ pub fn run_server(server_port : u16) {
 
     let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
-    let subscribers : Vec<SenderAndIp> = Vec::new();
+    let subscribers : Vec<Subscriber> = Vec::new();
     let subscribers_shared = Arc::new(Mutex::new(subscribers));
     let start_time = time::now();
 
@@ -46,10 +47,20 @@ pub fn run_server(server_port : u16) {
 
     for connection in ws_server {
         let local_subscribers = subscribers_shared.clone();
+        let keep_alive_subscribers = subscribers_shared.clone();
         let sender = sender.clone();
 
         thread::spawn(move || {
-            let request = connection.unwrap().read_request().unwrap();
+            //let request = connection.unwrap().read_request().unwrap();
+            let request = match connection.unwrap().read_request() {
+                Ok(request) => request,
+                Err(e) => {
+                    // This block should run when client disconnected and TCP socket is aware of if
+                    // if TCP connection will not raise error on disconnect then it probably will in a ping loop
+                    println!("HTTP Error reading request {:?} {}", e, e);
+                    return;
+                }
+            };
             let headers = request.headers.clone();
             let path = request.url.to_string();
 
@@ -67,8 +78,8 @@ pub fn run_server(server_port : u16) {
                 let (_, writer) = response.into_inner();
 
                 if path == "/@/stats" {
-                    let mut listerners_wrap = local_subscribers.lock().unwrap();
-                    waithook_stats::show_stats(web_request, writer, listerners_wrap.deref_mut(), start_time);
+                    let mut listeners_wrap = local_subscribers.lock().unwrap();
+                    waithook_stats::show_stats(web_request, writer, listeners_wrap.deref_mut(), start_time);
                 } else {
                     webserver::handle(web_request, writer, sender);
                 }
@@ -91,9 +102,8 @@ pub fn run_server(server_port : u16) {
                 let (ws_sender, mut ws_receiver) = client.split();
 
                 let (channel_sender, channel_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
-                //let channel_sender_ref = &channel_sender;
 
-                let sender_and_ip = SenderAndIp {
+                let subscriber = Subscriber {
                     sender: channel_sender,
                     ip: client_ip.clone(),
                     path: path.clone()
@@ -101,10 +111,9 @@ pub fn run_server(server_port : u16) {
 
                 // block to make sure listeners are unblocked
                 {
-                    let mut listerners_wrap = local_subscribers.lock().unwrap();
-                    let mut listerners = listerners_wrap.deref_mut();
-                    //listerners.push(channel_sender);
-                    listerners.push(sender_and_ip);
+                    let mut listeners_wrap = local_subscribers.lock().unwrap();
+                    let mut listeners = listeners_wrap.deref_mut();
+                    listeners.push(subscriber);
                 }
 
                 let ws_sender_shared = Arc::new(Mutex::new(ws_sender));
@@ -115,33 +124,29 @@ pub fn run_server(server_port : u16) {
                 let local_ws_sender = ws_sender_shared.clone();
                 thread::spawn(move || {
                     for message in ws_receiver.incoming_messages() {
-                        let message: Message = message.unwrap();
+                        let message: Message = match message {
+                            Ok(message) => message,
+                            Err(e) => {
+                                // This block should run when client disconnected and TCP socket is aware of if
+                                // if TCP connection will not raise error on disconnect then it probably will in a ping loop
+                                println!("WS Error receiving a message {:?} {}", e, e);
+                                println!("WS Error probabaly client {} disconnected", client_ip);
+                                waithook_utils::remove_listener(&local_subscribers, client_ip);
+                                break;
+                            }
+                        };
                         println!("WS Got message {} {:?} {:?}", message.opcode, message.cd_status_code, message.payload);
+
                         match message.opcode {
                             Type::Close => {
                                 waithook_utils::handle_close_message(&local_ws_sender, client_ip);
-
-                                // block to make sure listeners are unblocked
-                                {
-                                    println!("WS Remove from listeners");
-                                    let mut listerners_wrap = local_subscribers.lock().unwrap();
-                                    let mut listerners = listerners_wrap.deref_mut();
-                                    //listerners.push(channel_sender);
-                                    let index = listerners.iter().position(|ref r| r.ip == client_ip );
-                                    match index {
-                                        Some(i) => {
-                                            println!("WS Remove listener {}", i);
-                                            listerners.remove(i);
-                                        },
-                                        None => {
-                                            println!("WS Can not find listerner in a list");
-                                        }
-                                    }
-                                }
+                                waithook_utils::remove_listener(&local_subscribers, client_ip);
                                 return;
                             },
                             Type::Ping => {
-                                waithook_utils::handle_ping_message(message, &local_ws_sender, client_ip);
+                                if !waithook_utils::handle_ping_message(message, &local_ws_sender, client_ip) {
+                                    waithook_utils::remove_listener(&local_subscribers, client_ip);
+                                }
                             },
                             Type::Pong => {
                                 println!("WS Got PONG from {}", client_ip);
@@ -158,7 +163,7 @@ pub fn run_server(server_port : u16) {
 
                 // Keep alive thing
                 let ping_local_ws_sender = ws_sender_shared.clone();
-                waithook_utils::keep_alive_ping(ping_local_ws_sender, client_ip.clone());
+                waithook_utils::keep_alive_ping(ping_local_ws_sender, client_ip.clone(), keep_alive_subscribers);
             }
         });
     }

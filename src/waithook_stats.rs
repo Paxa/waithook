@@ -10,7 +10,7 @@ use rustc_serialize::{Encodable, Encoder};
 
 use request_wrap::RequestWrap;
 use webserver;
-use waithook_server::SenderAndIp;
+use waithook_server::Subscriber;
 
 fn pretty_json(stats : WaithookStats) -> String {
     let encoder = json::as_pretty_json(&stats);
@@ -44,7 +44,7 @@ impl Encodable for WaithookStats {
 }
 
 
-pub fn show_stats(request: RequestWrap, mut writter: WebSocketStream, listeners: &Vec<SenderAndIp>, start_time: time::Tm) {
+pub fn show_stats(request: RequestWrap, mut writter: WebSocketStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
     println!("HTTP {} {}", request.method, request.url);
     let mut listeners_hash : HashMap<String, u32> = HashMap::new();
     for i in 0..listeners.len() {
