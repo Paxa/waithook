@@ -87,56 +87,6 @@ pub fn handle_close_message(local_ws_sender: &SharedSender, client_ip: SocketAdd
 }
 
 
-/*
- * listens to channel_reciever and send message to all matching listeners
- */
-
-pub fn listen_and_forward(ws_sender: SharedSender, channel_reciever: Receiver<RequestWrap>, path: String, client_ip: SocketAddr) {
-    thread::spawn(move || {
-        loop {
-            let request = channel_reciever.recv();
-            match request {
-                Ok(request) => {
-                    if extract_path(request.url.clone()) == path {
-                        println!("WS {} Got message {:?}", path, request);
-
-                        let message_row = pretty_json(&request);
-                        let message: Message = Message::text(message_row);
-
-                        match ws_sender.lock().unwrap().deref_mut().send_message(&message) {
-                            Ok(status) => {
-                                let diff = request.time.elapsed();
-                                println!("WS Send time: {}.{:09}", diff.as_secs(), diff.subsec_nanos());
-                                println!("WS Broadcast to {} success: {:?}", client_ip, status);
-                            },
-                            Err(e) => {
-                                println!("WS Broadcast to {} failed: {:?} {}", client_ip, e, e);
-                                match e {
-                                    WebSocketError::IoError(err) => {
-                                        println!("WS Broadcast WebSocketError::IoError error: {:?} {}", err, err);
-                                        println!("WS Stoping broadcast loop");
-                                        break
-                                    },
-                                    _ => {
-                                        println!("WS Broadcast error: {:?} {}", e, e);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                Err(e) => {
-                    println!("WS Recieve Error: {:?} {}", e, e);
-                    if format!("{}", e) == "receiving on a closed channel" {
-                        println!("WS Channel is closed, quiting!");
-                        break;
-                    }
-                }
-            }
-        }
-    });
-}
-
 pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers: Arc<Mutex<Vec<Subscriber>>>) {
     thread::spawn(move || {
         loop {
@@ -149,23 +99,41 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
                     let mut listeners_wrap = broker_subscribers.lock().unwrap();
                     let mut listeners = listeners_wrap.deref_mut();
 
+                    let message_row = pretty_json(&request);
+                    let message: Message = Message::text(message_row);
+                    let path = extract_path(request.url.clone());
+
                     println!("Send message to {} listeners", listeners.len());
 
                     listeners.retain(|ref listerner| {
-                        println!("Send message to listener {}", listerner.ip);
-                        match listerner.sender.send(request.clone()) {
-                            Ok(_) => { true },
-                            Err(e) => {
-                                println!("Broker: Channel send error: {}", e);
-                                if format!("{}", e) == "sending on a closed channel" {
-                                    println!("Broker: Remove listener from list {}", listerner.ip);
-                                    false
-                                } else {
+                        if listerner.path == path {
+                            match listerner.sender.lock().unwrap().deref_mut().send_message(&message) {
+                                Ok(status) => {
+                                    let diff = request.time.elapsed();
+                                    println!("WS Send time: {}.{:09}", diff.as_secs(), diff.subsec_nanos());
+                                    println!("WS Broadcast to {} success: {:?}", request.client_ip, status);
                                     true
+                                },
+                                Err(e) => {
+                                    println!("WS Broadcast to {} failed: {:?} {}", request.client_ip, e, e);
+                                    match e {
+                                        WebSocketError::IoError(err) => {
+                                            println!("WS Broadcast WebSocketError::IoError error: {:?} {}", err, err);
+                                            println!("WS Stoping broadcast loop");
+                                            false
+                                        },
+                                        _ => {
+                                            println!("WS Broadcast error: {:?} {}", e, e);
+                                            false
+                                        }
+                                    }
                                 }
                             }
+                        } else {
+                            true
                         }
                     });
+
                     println!("Broker: total listeners: {}", listeners.len());
                 },
                 Err(e) => {

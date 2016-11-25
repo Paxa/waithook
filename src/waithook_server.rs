@@ -26,7 +26,7 @@ pub type SubscribersLock = Arc<Mutex<Vec<Subscriber>>>;
 
 // Just wrapper, so I can remove listener from array when connection is closed
 pub struct Subscriber {
-    pub sender: Sender<RequestWrap>,
+    pub sender: SharedSender,
     pub ip: SocketAddr,
     pub path: String
 }
@@ -103,10 +103,10 @@ pub fn run_server(server_port : u16) {
 
                 let (ws_sender, mut ws_receiver) = client.split();
 
-                let (channel_sender, channel_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
+                let ws_sender_shared = Arc::new(Mutex::new(ws_sender));
 
                 let subscriber = Subscriber {
-                    sender: channel_sender,
+                    sender: ws_sender_shared.clone(),
                     ip: client_ip.clone(),
                     path: path.clone()
                 };
@@ -117,11 +117,6 @@ pub fn run_server(server_port : u16) {
                     let mut listeners = listeners_wrap.deref_mut();
                     listeners.push(subscriber);
                 }
-
-                let ws_sender_shared = Arc::new(Mutex::new(ws_sender));
-
-                let req_local_ws_sender = ws_sender_shared.clone();
-                waithook_utils::listen_and_forward(req_local_ws_sender, channel_reciever, path, client_ip);
 
                 let local_ws_sender = ws_sender_shared.clone();
                 thread::spawn(move || {
