@@ -6,13 +6,15 @@ use std::net::IpAddr;
 
 use std::collections::HashMap;
 use rustc_serialize::{Encodable, Encoder};
+use std::time::Instant;
 
 pub struct RequestWrap {
     pub method: String,
     pub url: String,
     pub headers: Headers,
     pub body: String,
-    pub client_ip: IpAddr
+    pub client_ip: IpAddr,
+    pub time: Instant
 }
 
 
@@ -59,7 +61,8 @@ impl Clone for RequestWrap {
             url: self.url.clone(),
             headers: self.headers.clone(),
             body: self.body.clone(),
-            client_ip: self.client_ip.clone()
+            client_ip: self.client_ip.clone(),
+            time: self.time.clone()
         }
     }
 }

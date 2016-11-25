@@ -4,6 +4,7 @@ use std::str::FromStr;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{self, Sender, Receiver};
+use std::time::Instant;
 
 use websocket::{Message, Server, WebSocketStream};
 use websocket::Receiver as WsReceiver;
@@ -71,7 +72,8 @@ pub fn run_server(server_port : u16) {
                     url: request.url.to_string(),
                     headers: request.headers.clone(),
                     body: request.body.clone(),
-                    client_ip: request.get_reader().peer_addr().unwrap().clone().ip()
+                    client_ip: request.get_reader().peer_addr().unwrap().clone().ip(),
+                    time: Instant::now()
                 };
 
                 let response = WsResponse::bad_request(request);

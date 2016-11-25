@@ -18,7 +18,7 @@ fn extract_path(url: String) -> String {
     url[0 .. url.find('?').unwrap_or(url.len())].to_string()
 }
 
-fn pretty_json(request: RequestWrap) -> String {
+fn pretty_json(request: &RequestWrap) -> String {
     let encoder = json::as_pretty_json(&request);
     format!("{}", encoder)
 }
@@ -100,11 +100,13 @@ pub fn listen_and_forward(ws_sender: SharedSender, channel_reciever: Receiver<Re
                     if extract_path(request.url.clone()) == path {
                         println!("WS {} Got message {:?}", path, request);
 
-                        let message_row = pretty_json(request);
+                        let message_row = pretty_json(&request);
                         let message: Message = Message::text(message_row);
 
                         match ws_sender.lock().unwrap().deref_mut().send_message(&message) {
                             Ok(status) => {
+                                let diff = request.time.elapsed();
+                                println!("WS Send time: {}.{:09}", diff.as_secs(), diff.subsec_nanos());
                                 println!("WS Broadcast to {} success: {:?}", client_ip, status);
                             },
                             Err(e) => {
