@@ -72,7 +72,7 @@ pub fn run_server(server_port : u16) {
                     url: request.url.to_string(),
                     headers: request.headers.clone(),
                     body: request.body.clone(),
-                    client_ip: request.get_reader().peer_addr().unwrap().clone().ip(),
+                    client_ip: request.get_reader().peer_addr().unwrap().clone(),
                     time: Instant::now()
                 };
 
@@ -98,7 +98,7 @@ pub fn run_server(server_port : u16) {
                     .peer_addr()
                     .unwrap();
 
-                println!("WS Connection from {}", client_ip);
+                println!("WS Connection from {} on {}", client_ip, path);
                 println!("WS Headers: {:?}", headers);
 
                 let (ws_sender, mut ws_receiver) = client.split();

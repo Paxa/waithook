@@ -2,7 +2,7 @@ use hyper::header::Headers;
 
 use std::fmt;
 use std::clone::Clone;
-use std::net::IpAddr;
+use std::net::{SocketAddr};
 
 use std::collections::HashMap;
 use rustc_serialize::{Encodable, Encoder};
@@ -13,7 +13,7 @@ pub struct RequestWrap {
     pub url: String,
     pub headers: Headers,
     pub body: String,
-    pub client_ip: IpAddr,
+    pub client_ip: SocketAddr,
     pub time: Instant
 }
 

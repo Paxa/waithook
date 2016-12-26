@@ -100,6 +100,7 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
                     let mut listeners = listeners_wrap.deref_mut();
 
                     let message_row = pretty_json(&request);
+                    println!("MESSAGE: {}", message_row);
                     let message: Message = Message::text(message_row);
                     let path = extract_path(request.url.clone());
 
@@ -111,11 +112,11 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
                                 Ok(status) => {
                                     let diff = request.time.elapsed();
                                     println!("WS Send time: {}.{:09}", diff.as_secs(), diff.subsec_nanos());
-                                    println!("WS Broadcast to {} success: {:?}", request.client_ip, status);
+                                    println!("WS Broadcast to {} success: {:?}", listerner.ip, status);
                                     true
                                 },
                                 Err(e) => {
-                                    println!("WS Broadcast to {} failed: {:?} {}", request.client_ip, e, e);
+                                    println!("WS Broadcast to {} failed: {:?} {}", listerner.ip, e, e);
                                     match e {
                                         WebSocketError::IoError(err) => {
                                             println!("WS Broadcast WebSocketError::IoError error: {:?} {}", err, err);
