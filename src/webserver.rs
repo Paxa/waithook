@@ -6,6 +6,7 @@ use std::sync::mpsc::Sender;
 use std::net::Shutdown;
 use std::io::{self, Write, Read};
 use std::fs::File;
+use rustc_serialize::json::Json;
 
 use request_wrap::RequestWrap;
 
@@ -80,12 +81,38 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
 
         create_http_response(body, &format!("Content-Type: {}", content_type))
     } else {
+        let req_body = request.body.clone();
+        let req_url  = request.url.clone();
         match sender.send(request) {
             Ok(_) => {},
             Err(e) => { println!("HTTP Channel send error: {}", e); }
         }
 
-        create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+        if req_url.contains("type=slack") {
+            match Json::from_str(&req_body) {
+                Ok (json) => {
+                    match json.find("challenge") {
+                        Some(body_value) => {
+                            if body_value.is_string() {
+                                create_http_response(body_value.as_string().unwrap().to_string(), "Content-Type: text/plain")
+                            } else {
+                                create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                            }
+                        },
+                        None => {
+                            println!("Slack message don't have 'challenge'");
+                            create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                        }
+                    }
+                },
+                Err(e) => {
+                    println!("Error parsing slack message: {}", e);
+                    create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                }
+            }
+        } else {
+            create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+        }
     };
 
     match writter.write(raw_response.as_bytes()) {
