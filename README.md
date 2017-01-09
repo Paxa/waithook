@@ -4,6 +4,10 @@ An excelent tool to debug incoming HTTP notifications. Let's say your applicatio
 It can payment provider or incoming email processing or GitHub push notifications, etc.
 Developing it on localhost can be hard, using SSH tunnels always gave me hard times.
 
+## Client Libraries
+
+* https://github.com/Paxa/waithook-ruby
+
 ## How it Works
 
 1. Open web-socket connection to https://waithook.herokuapp.com/something (choose your namespace)
@@ -44,3 +48,5 @@ Example of message send to websocket:
 ```
 cargo run
 ```
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
