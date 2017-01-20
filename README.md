@@ -31,7 +31,7 @@ Example of message send to websocket:
     "Connect-Time": "1",
     "Origin": "https://waithook.com",
     "Referer": "https://waithook.com/",
-    "Host": "waithook.herokuapp.com",
+    "Host": "waithook.com",
     "X-Request-Id": "5d12e9b2-31d1-47b1-abc9-f9bca03dc4bf",
     "X-Forwarded-Proto": "https",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.59 Safari/537.36",

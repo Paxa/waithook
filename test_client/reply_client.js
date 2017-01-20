@@ -15,7 +15,7 @@ if (!SEND_TO.match(/^https?:\/\//)) {
   SEND_TO = "http://" + SEND_TO;
 }
 
-console.log("Subscribing for 'wss://waithook.herokuapp.com/%s", LISTEN_TO);
+console.log("Subscribing for 'ws://waithook.com/%s", LISTEN_TO);
 console.log("Forward to ", SEND_TO);
 
 var client = new WebSocketClient();
@@ -61,5 +61,5 @@ client.on('connect', function(connection) {
 });
 
 //client.connect('ws://localhost:3012/' + LISTEN_TO);
-client.connect('wss://waithook.herokuapp.com/' + LISTEN_TO);
+client.connect('ws://waithook.com/' + LISTEN_TO);
 

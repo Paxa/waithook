@@ -2,7 +2,7 @@
   "name": "Waithook",
   "description": "HTTP to web-socket transmitter, took to test webhooks from anywhere",
   "repository": "https://github.com/paxa/waithook",
-  "website": "https://waithook.herokuapp.com/",
+  "website": "http://waithook.com/",
   "logo": "https://node-js-sample.herokuapp.com/node.svg",
   "keywords": ["websocket", "rust", "development", "webhook"],
   "stack": "cedar-14",
