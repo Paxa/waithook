@@ -5,6 +5,7 @@ extern crate env_logger;
 extern crate websocket;
 extern crate rustc_serialize;
 extern crate time;
+extern crate url;
 
 use std::env;
 use std::str::FromStr;

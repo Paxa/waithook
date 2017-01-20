@@ -2,7 +2,7 @@ use hyper::header::Headers;
 
 use std::fmt;
 use std::clone::Clone;
-use std::net::{SocketAddr};
+use std::net::SocketAddr;
 
 use std::collections::HashMap;
 use rustc_serialize::{Encodable, Encoder};

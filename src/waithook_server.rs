@@ -38,6 +38,7 @@ pub fn run_server(server_port : u16) {
     let ws_server = Server::bind(SocketAddr::from_str(listen_address.as_str()).unwrap()).unwrap();
 
     let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
+    let (forward_sender, forward_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
     let subscribers : Vec<Subscriber> = Vec::new();
     let subscribers_shared = Arc::new(Mutex::new(subscribers));
@@ -45,11 +46,13 @@ pub fn run_server(server_port : u16) {
 
     let broker_subscribers = subscribers_shared.clone();
     waithook_utils::run_broadcast_broker(reciever, broker_subscribers);
+    waithook_utils::run_forwarder(forward_reciever);
 
     for connection in ws_server {
         let local_subscribers = subscribers_shared.clone();
         let keep_alive_subscribers = subscribers_shared.clone();
         let sender = sender.clone();
+        let forward_sender = forward_sender.clone();
 
         thread::spawn(move || {
             //let request = connection.unwrap().read_request().unwrap();
@@ -76,6 +79,7 @@ pub fn run_server(server_port : u16) {
                     time: Instant::now()
                 };
 
+                println!("request.url {:?}", request.url);
                 let response = WsResponse::bad_request(request);
                 let (_, writer) = response.into_inner();
 
@@ -83,7 +87,11 @@ pub fn run_server(server_port : u16) {
                     let mut listeners_wrap = local_subscribers.lock().unwrap();
                     waithook_stats::show_stats(web_request, writer, listeners_wrap.deref_mut(), start_time);
                 } else {
-                    webserver::handle(web_request, writer, sender);
+                    webserver::handle(web_request.clone(), writer, sender);
+                    match forward_sender.send(web_request) {
+                        Ok(_) => {},
+                        Err(e) => { println!("FORWARDER: HTTP Channel send error: {}", e); }
+                    }
                 }
                 return;
             } else {

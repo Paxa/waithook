@@ -13,6 +13,10 @@ use websocket::result::WebSocketError;
 use request_wrap::RequestWrap;
 use waithook_server::{SharedSender, Subscriber, SubscribersLock};
 use rustc_serialize::json;
+use url::Url;
+use hyper::client::Client;
+use hyper::header;
+
 
 fn extract_path(url: String) -> String {
     url[0 .. url.find('?').unwrap_or(url.len())].to_string()
@@ -144,6 +148,80 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
 
         }
     });
+}
+
+pub fn run_forwarder(reciever: Receiver<RequestWrap>) {
+    thread::spawn(move || {
+        loop {
+            let request = reciever.recv();
+
+            match request {
+                Ok(request) => {
+                    match Url::parse(&format!("http://example.com{}", &request.url)) {
+                        Ok(url) => {
+                            let forward_arg = url.query_pairs().find(|ref x| x.0 == "forward" );
+                            match forward_arg {
+                                Some(value) => {
+                                    forward_request(request, value.1.into_owned());
+                                },
+                                None => {
+                                    println!("FORWARD: No 'forward' argument");
+                                }
+                            }
+                        },
+                        Err(e) => {
+                            println!("FORWARD: Parse Query Error: {}", e);
+                        }
+                    };
+
+                    //println!("FOWRWARD: Got message {:?} from {:?}", request, request.client_ip);
+                }
+                Err(e) => {
+                    println!("FORWARD: Recieve Error: {}", e);
+                }
+            }
+        }
+    });
+}
+
+fn forward_request(request: RequestWrap, target: String) {
+    println!("FORWARD: Sending {} request to {:?}", request.method, target);
+    let client = Client::new();
+    let mut headers = request.headers.clone();
+    headers.remove::<header::Host>();
+
+    let res = match request.method.as_ref() {
+        "GET" => {
+            client.get(&target).headers(headers).send()
+        },
+        "HEAD" => {
+            client.head(&target).headers(headers).body(&request.body).send()
+        },
+        "POST" => {
+            client.post(&target).headers(headers).body(&request.body).send()
+        },
+        "PATCH" => {
+            client.patch(&target).headers(headers).body(&request.body).send()
+        },
+        "PUT" => {
+            client.put(&target).headers(headers).body(&request.body).send()
+        },
+        "DELETE" => {
+            client.delete(&target).headers(headers).body(&request.body).send()
+        },
+        _ => {
+            client.post(&target).headers(headers).body(&request.body).send()
+        }
+    };
+
+    match res {
+        Ok(res) => {
+            println!("FORWARD: Response {:?}", res);
+        },
+        Err(e) => {
+            println!("FORWARD: Error {:?}", e);
+        }
+    }
 }
 
 pub fn remove_listener(ref mut subscribers_lock: &SubscribersLock, client_ip: SocketAddr) {
