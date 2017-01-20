@@ -10,8 +10,8 @@ Developing it on localhost can be hard, using SSH tunnels always gave me hard ti
 
 ## How it Works
 
-1. Open web-socket connection to https://waithook.herokuapp.com/something (choose your namespace)
-2. Send HTTP request to https://waithook.herokuapp.com/something
+1. Open web-socket connection to http://waithook.com/something (choose your namespace)
+2. Send HTTP request to http://waithook.com/something
 3. Waithook will forward it as json to all listening web-socket connections
 
 Example of message send to websocket:
@@ -29,8 +29,8 @@ Example of message send to websocket:
     "Content-Type": "application/json",
     "Content-Length": "69",
     "Connect-Time": "1",
-    "Origin": "https://waithook.herokuapp.com",
-    "Referer": "https://waithook.herokuapp.com/",
+    "Origin": "https://waithook.com",
+    "Referer": "https://waithook.com/",
     "Host": "waithook.herokuapp.com",
     "X-Request-Id": "5d12e9b2-31d1-47b1-abc9-f9bca03dc4bf",
     "X-Forwarded-Proto": "https",
