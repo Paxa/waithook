@@ -44,7 +44,7 @@ impl Encodable for WaithookStats {
 }
 
 
-pub fn show_stats(request: RequestWrap, mut writter: WebSocketStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
+pub fn show_stats(request: RequestWrap, mut writer: WebSocketStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
     println!("HTTP {} {}", request.method, request.url);
     let mut listeners_hash : HashMap<String, u32> = HashMap::new();
     for i in 0..listeners.len() {
@@ -62,12 +62,12 @@ pub fn show_stats(request: RequestWrap, mut writter: WebSocketStream, listeners:
         start_time: start_time
     };
 
-    let raw_response = webserver::create_http_response(pretty_json(stats), "Content-Type: application/json");
-    match writter.write(raw_response.as_bytes()) {
+    let raw_response = webserver::create_http_response(pretty_json(stats), "Content-Type: application/json", false);
+    match writer.write(raw_response.as_slice()) {
         Ok(_) => {},
         Err(e) => { println!("HTTP Socket write error: {}", e); }
     }
 
-    writter.flush().unwrap();
-    writter.shutdown(Shutdown::Both).unwrap();
+    writer.flush().unwrap();
+    writer.shutdown(Shutdown::Both).unwrap();
 }

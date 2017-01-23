@@ -4,6 +4,7 @@ extern crate hyper;
 extern crate env_logger;
 extern crate websocket;
 extern crate rustc_serialize;
+extern crate flate2;
 extern crate time;
 extern crate url;
 

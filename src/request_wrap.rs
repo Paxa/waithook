@@ -1,4 +1,4 @@
-use hyper::header::Headers;
+use hyper::header::{self, Headers, Encoding, qitem};
 
 use std::fmt;
 use std::clone::Clone;
@@ -17,6 +17,18 @@ pub struct RequestWrap {
     pub time: Instant
 }
 
+impl RequestWrap {
+    pub fn suport_gzip(&self) -> bool {
+        match self.headers.get() {
+            Some(&header::AcceptEncoding(ref accept_encoding)) => {
+                accept_encoding.contains(&qitem(Encoding::Deflate))
+            }
+            None => {
+                false
+            }
+        }
+    }
+}
 
 impl Encodable for RequestWrap {
     fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {

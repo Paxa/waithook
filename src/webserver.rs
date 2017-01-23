@@ -6,7 +6,10 @@ use std::sync::mpsc::Sender;
 use std::net::Shutdown;
 use std::io::{self, Write, Read};
 use std::fs::File;
+use std::str;
 use rustc_serialize::json::Json;
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
 
 use request_wrap::RequestWrap;
 
@@ -24,30 +27,57 @@ fn get_file_body(filepath: &str) -> Result<String, io::Error> {
     let mut body = String::new();
     try!(file.read_to_string(&mut body));
 
+
     Ok(body)
 }
 
+/*
 pub fn create_http_response(body: String, extra_headers: &str) -> String {
-    if extra_headers == "" {
-        format!("{}\r\n{}\r\n{}: {}\r\n\r\n{}",
-            "HTTP/1.1 200 OK",
-            "Connection: close",
-            "Content-Length", body.len(),
-            body
-        )
+    create_http_response(body, extra_headers, false)
+}
+*/
+
+pub fn create_http_response(body: String, extra_headers: &str, compress: bool) -> Vec<u8> {
+    let mut gzip_header = "";
+
+    let body_bytes = if compress {
+        let mut e = ZlibEncoder::new(Vec::new(), Compression::Default);
+        gzip_header = "Content-Encoding: deflate\r\n";
+        match e.write(body.as_bytes()) {
+            Ok(_) => {},
+            Err(e) => { println!("Compression error: {}", e); }
+        }
+        e.finish().unwrap()
     } else {
-        format!("{}\r\n{}\r\n{}: {}\r\n{}\r\n\r\n{}",
+        body.into_bytes()
+    };
+
+    //println!("BODY: {:?}", body_bytes);
+
+    let mut result = if extra_headers == "" {
+        format!("{}\r\n{}{}\r\n{}: {}\r\n\r\n",
             "HTTP/1.1 200 OK",
+            gzip_header,
             "Connection: close",
-            "Content-Length", body.len(),
-            extra_headers,
-            body
-        )
-    }
+            "Content-Length", body_bytes.len()
+        ).into_bytes()
+    } else {
+        format!("{}\r\n{}{}\r\n{}: {}\r\n{}\r\n\r\n",
+            "HTTP/1.1 200 OK",
+            gzip_header,
+            "Connection: close",
+            "Content-Length", body_bytes.len(),
+            extra_headers
+        ).into_bytes()
+    };
+
+    result.extend(body_bytes);
+    result
 }
 
-pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender<RequestWrap>) {
+pub fn handle(request: RequestWrap, mut writer: WebSocketStream, sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
+    let enable_compression = request.suport_gzip();
 
     let raw_response = if request.url == "/" || request.url.starts_with("/?") {
         let body = match get_file_body("index.html") {
@@ -57,7 +87,7 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
             }
         };
 
-        create_http_response(body, "Content-Type: text/html")
+        create_http_response(body, "Content-Type: text/html", enable_compression)
     } else if request.url.starts_with("/@/") {
         let (_, filename) = request.url.split_at(3);
         let body = match get_file_body(filename) {
@@ -79,7 +109,7 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
             content_type = "image/x-icon"
         }
 
-        create_http_response(body, &format!("Content-Type: {}", content_type))
+        create_http_response(body, &format!("Content-Type: {}", content_type), enable_compression)
     } else {
         let req_body = request.body.clone();
         let req_url  = request.url.clone();
@@ -94,32 +124,32 @@ pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender
                     match json.find("challenge") {
                         Some(body_value) => {
                             if body_value.is_string() {
-                                create_http_response(body_value.as_string().unwrap().to_string(), "Content-Type: text/plain")
+                                create_http_response(body_value.as_string().unwrap().to_string(), "Content-Type: text/plain", false)
                             } else {
-                                create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                                create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
                             }
                         },
                         None => {
                             println!("Slack message don't have 'challenge'");
-                            create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                            create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
                         }
                     }
                 },
                 Err(e) => {
                     println!("Error parsing slack message: {}", e);
-                    create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+                    create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
                 }
             }
         } else {
-            create_http_response("OK\n".to_string(), "Content-Type: text/plain")
+            create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
         }
     };
 
-    match writter.write(raw_response.as_bytes()) {
+    match writer.write(raw_response.as_slice()) {
         Ok(_) => {},
         Err(e) => { println!("HTTP Socket write error: {}", e); }
     }
 
-    writter.flush().unwrap();
-    writter.shutdown(Shutdown::Both).unwrap();
+    writer.flush().unwrap();
+    writer.shutdown(Shutdown::Both).unwrap();
 }

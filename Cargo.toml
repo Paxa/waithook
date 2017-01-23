@@ -9,6 +9,8 @@ hyper = "0.10"
 rustc-serialize = "0.3.22"
 url = "1.3.0"
 time = "0.1"
+flate2 = "0.2"
+#flate2 = { version = "0.2", features = ["zlib"], default-features = false }
 
 websocket = { git = "https://github.com/Paxa/rust-websocket.git" }
 #websocket = { path = "./rust-websocket" }
