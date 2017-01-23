@@ -16,13 +16,12 @@ fn get_server_port() -> u16 {
     FromStr::from_str(&port_str).unwrap_or(3012)
 }
 
-//use std::sync::{Arc, Mutex};
-
 mod webserver;
 mod waithook_server;
 mod waithook_utils;
 mod waithook_stats;
 mod request_wrap;
+mod waithook_forward;
 
 
 fn main() {

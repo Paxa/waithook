@@ -49,7 +49,7 @@ pub fn create_http_response(body: String, extra_headers: &str) -> String {
 pub fn handle(request: RequestWrap, mut writter: WebSocketStream, sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
 
-    let raw_response = if request.url == "/" {
+    let raw_response = if request.url == "/" || request.url.starts_with("/?") {
         let body = match get_file_body("index.html") {
             Ok(b) => b,
             Err(e) => {
