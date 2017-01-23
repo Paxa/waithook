@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="/@/favicon.ico">
 </head>
 
-<body class="layout-default">
+<body class="layout-default" onload="onPageLoad()">
   <section class="hero container section wh-header">
     <header>
       <h1 class="title">WaitHook</h1>
@@ -40,12 +40,32 @@
       </div>
 
       <div class="control is-grouped is-horizontal buttons">
-        <div class="control">
+        <div class="control subscribe-buttons">
           <input id="subscribe_start" type="submit" value="Subscribe" autofocus class="button is-success">
-          &nbsp;&rarr;&nbsp;
+          <label><input type="checkbox" id="do_forward"> Forward</label>
+          <label><input type="checkbox" id="send_to_localhost"> Send To localhost</label>
           <input id="subscribe_simulate" type="submit" value="Simulate Request" disabled class="button is-info">
-          &nbsp;
-          <a id="sample_link" target="_blank" disabled class="button is-info">Generate Request</a>
+        </div>
+      </div>
+
+      <div class="control is-grouped is-horizontal forward-to-form">
+        <div class="control-label">
+          <label class="label" for="forward_url">Forward To</label>
+          <small>(Make server also send request to that URL)</small>
+        </div>
+        <div class="control">
+          <input id="forward_url" class="input" placeholder="http://example.com/"/>
+        </div>
+      </div>
+
+
+      <div class="control is-grouped is-horizontal local-url-form">
+        <div class="control-label">
+          <label class="label" for="local_url">Local URL</label>
+          <small>(Send request to local host using your browser)</small>
+        </div>
+        <div class="control">
+          <input id="local_url" class="input" placeholder="http://localhost:3000/got_notification"/>
         </div>
       </div>
 
@@ -66,7 +86,7 @@
           <a href="http://opensource.org/licenses/mit-license.php">MIT</a>.
         </p>
         <p>
-          <iframe class="github-btn" src="https://ghbtns.com/github-btn.html?user=paxa&repo=waithook&type=star&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="105px" height="20px"></iframe>
+          <iframe class="github-btn" src="" allowtransparency="true" frameborder="0" scrolling="0" width="105px" height="20px"></iframe>
         </p>
       </div>
     </div>

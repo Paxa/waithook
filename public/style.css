@@ -4,10 +4,15 @@ html {
 body {
   background: #fff;
   height: 100%;
+  color: #505050;
 }
 
 .wh-header {
   padding-left: 0;
+}
+
+.subtitle {
+  color: #4e4c4c;
 }
 
 div.description {
@@ -86,3 +91,35 @@ code pre div + div {
 footer.footer {
   padding-bottom: 40px;
 }
+
+.subscribe-buttons label {
+  width: auto;
+  margin: 0 19px;
+  line-height: 32px;
+  user-select: none;
+}
+
+.subscribe-buttons label + label {
+  margin-left: 0;
+}
+
+.control.is-horizontal.forward-to-form, .control.is-horizontal.local-url-form {
+  display: none;
+  text-align: left;
+}
+
+.control.is-horizontal.forward-to-form label, .control.is-horizontal.local-url-form label {
+  display: inline-block;
+  text-align: left;
+  width: auto;
+}
+
+.control.is-horizontal.forward-to-form .control-label, .control.is-horizontal.local-url-form .control-label {
+  text-align: left;
+}
+
+.control.is-horizontal.forward-to-form small, .control.is-horizontal.local-url-form small {
+  font-size: 12px;
+  margin-left: 5px;
+}
+
