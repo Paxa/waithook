@@ -27,11 +27,11 @@ fn pretty_json(request: &RequestWrap) -> String {
 pub fn keep_alive_ping(ping_local_ws_sender: SharedSender, client_ip: SocketAddr, local_subscribers: SubscribersLock) {
     thread::spawn(move || {
         loop {
-            println!("WS Sending PING to {}", client_ip);
+            //println!("WS Sending PING to {}", client_ip);
             let message = Message::ping(b"PING".to_vec());
             match ping_local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
                 Ok(status) => {
-                    println!("WS Ping success: {:?}", status);
+                    //println!("WS Ping success: {:?}", status);
                 },
                 Err(e) => {
                     println!("WS Ping failed: {:?} {}", e, e);

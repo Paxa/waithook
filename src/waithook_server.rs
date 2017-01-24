@@ -141,7 +141,9 @@ pub fn run_server(server_port : u16) {
                                 break;
                             }
                         };
-                        println!("WS Got message {} {:?} {:?}", message.opcode, message.cd_status_code, message.payload);
+                        if message.opcode != Type::Ping {
+                            println!("WS Got message {} {:?} {:?}", message.opcode, message.cd_status_code, message.payload);
+                        }
 
                         match message.opcode {
                             Type::Close => {
@@ -155,7 +157,7 @@ pub fn run_server(server_port : u16) {
                                 }
                             },
                             Type::Pong => {
-                                println!("WS Got PONG from {}", client_ip);
+                                //println!("WS Got PONG from {}", client_ip);
                             },
                             _ => {
                                 match local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
