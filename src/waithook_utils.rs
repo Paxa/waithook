@@ -30,7 +30,7 @@ pub fn keep_alive_ping(ping_local_ws_sender: SharedSender, client_ip: SocketAddr
             //println!("WS Sending PING to {}", client_ip);
             let message = Message::ping(b"PING".to_vec());
             match ping_local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
-                Ok(status) => {
+                Ok(_) => {
                     //println!("WS Ping success: {:?}", status);
                 },
                 Err(e) => {

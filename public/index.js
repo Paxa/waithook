@@ -28,7 +28,8 @@ function subscribe() {
       addMessageToLog("Sending " + parsed.method + " request to: " + localUrl);
 
       var xhr = new XMLHttpRequest();
-      xhr.open(parsed.method, localUrl, true);
+      var updatedUrl = localUrl.replace('localhost', 'local.waithook.com').replace('127.0.0.1', 'local.waithook.com');
+      xhr.open(parsed.method, updatedUrl, true);
       var skipHeaders = [
         "host", "connection", "origin", "referer", "cookie", "user-agent", "accept-encoding", "content-length"
       ];
