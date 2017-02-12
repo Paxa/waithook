@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang='en'>
 <head>
   <title>Waithook</title>
-  <link rel="stylesheet" type="text/css" href="/@/bulma.css">
+  <meta content='width=device-width, initial-scale=1' name='viewport'>
+  <meta content='text/html; charset=UTF-8' http-equiv='Content-Type'>
+  <link rel="stylesheet" type="text/css" href="/@/bulma.min.css">
   <link rel="stylesheet" type="text/css" href="/@/highlight-github.css">
   <link rel="stylesheet" type="text/css" href="/@/style.css">
   <link rel="icon" type="image/png" href="/@/favicon.ico">
@@ -16,21 +18,27 @@
     </header>
   </section>
 
-  <section class="hero is-info is-bold">
+  <section class="hero is-info is-bold wh-description">
     <div class="description container hero-body">
-      <strong>Waithook</strong> was build to ease receiving HTTP notifications in development and testing environment. It allows you to set web hook URL once and recieve requests from any location. The advantage of using <strong>WebSocket</strong> &mdash; it can work behind NAT or Firewall or Proxy.
+      <strong>Waithook</strong> was build to ease receiving HTTP notifications in development and testing environments.
+      It uses <strong>WebSockets</strong> to deliver messages, so it can work behind firewall, network routes and proxy.
+      Think of it as Pub/Sub for HTTP callback.
       <br/>
       <br/>
       <strong>1.</strong> Open WebSocket connection to <span class="code">ws://waithook.com/$your_unique_name</span><br/>
       <strong>2.</strong> Send request to <span class="code">http://waithook.com/$your_unique_name</span><br/>
-      <strong>3.</strong> You got it!<br/>
+      <strong>3.</strong> Receive message via WebSocket connection<br/>
+      <br/>
+      <div class="libs">
+        <strong>&rsaquo;</strong> Ruby library and command-line utilite <a href="https://github.com/Paxa/waithook-ruby">waithook-ruby</a>
+      </div>
     </div>
   </section>
 
   <section class="section">
     <div class="online-demo container">
       <h3 class="title is-4">Online Demo</h3>
-      <div class="control is-grouped is-horizontal">
+      <div class="control is-grouped is-horizontal url-prefix">
         <div class="control-label">
           <label class="label" for="subscribe_path">Path Prefix</label>
         </div>
@@ -39,33 +47,37 @@
         </div>
       </div>
 
-      <div class="control is-grouped is-horizontal buttons">
-        <div class="control subscribe-buttons">
-          <input id="subscribe_start" type="submit" value="Subscribe" autofocus class="button is-success">
+      <div class="control is-grouped is-horizontal check-boxes">
+        <div class="control">
           <label><input type="checkbox" id="do_forward"> Forward</label>
           <label><input type="checkbox" id="send_to_localhost"> Send To localhost</label>
-          <input id="subscribe_simulate" type="submit" value="Simulate Request" disabled class="button is-info">
         </div>
       </div>
 
       <div class="control is-grouped is-horizontal forward-to-form">
         <div class="control-label">
           <label class="label" for="forward_url">Forward To</label>
-          <small>(Make server also send request to that URL)</small>
+          <small>(Make server send request to that URL)</small>
         </div>
         <div class="control">
           <input id="forward_url" class="input" placeholder="http://example.com/"/>
         </div>
       </div>
 
-
       <div class="control is-grouped is-horizontal local-url-form">
         <div class="control-label">
           <label class="label" for="local_url">Local URL</label>
-          <small>(Send request to local host using your browser)</small>
+          <small>(Send request to local host using your browser, requires Access-Control-Allow-* headers on server)</small>
         </div>
         <div class="control">
           <input id="local_url" class="input" placeholder="http://localhost:3000/got_notification"/>
+        </div>
+      </div>
+
+      <div class="control is-grouped is-horizontal buttons">
+        <div class="control subscribe-buttons">
+          <input id="subscribe_start" type="submit" value="Subscribe" autofocus class="button is-success">
+          <input id="subscribe_simulate" type="submit" value="Simulate Request" disabled class="button is-info">
         </div>
       </div>
 
@@ -82,16 +94,13 @@
     <div class="container">
       <div class="content has-text-centered">
         <p>
-          <strong>Waithook</strong> by <a href="https://github.com/Paxa">Pavel Evstigneev</a>. The source code is licensed
-          <a href="http://opensource.org/licenses/mit-license.php">MIT</a>.
-        </p>
-        <p>
-          <iframe class="github-btn" src="" allowtransparency="true" frameborder="0" scrolling="0" width="105px" height="20px"></iframe>
+          <strong>Waithook</strong> by <a href="https://github.com/Paxa">Pavel Evstigneev</a>.
+          <span class="separator">|</span>
+          <a href="https://github.com/Paxa/waithook" class="source-code">Source Code</a> on GitHub.
         </p>
       </div>
     </div>
   </footer>
-
 </body>
 <script src="/@/index.js"></script>
 <script src="/@/highlight.pack.js" async></script>

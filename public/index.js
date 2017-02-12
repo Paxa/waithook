@@ -1,12 +1,16 @@
 var $ = function (selector) { return document.querySelector(selector); };
 
+var websocket = null;
+
 function subscribe() {
+  $('#subscribe_start').value = "Connecting...";
+  $('#subscribe_start').disabled = true;
   var path = $('#subscribe_path').value;
   $('#subscribe_path').disabled = true;
 
   var wsProtocol = window.location.protocol == "http:" ? "ws:" : "wss:";
   var wsURL = wsProtocol + "//" + window.location.host + "/" + path;
-  var websocket = new WebSocket(wsURL);
+  websocket = new WebSocket(wsURL);
 
   var newUrl = "/?" + buildQuery({
     path: path,
@@ -24,27 +28,7 @@ function subscribe() {
 
     var localUrl = $('#local_url').value;
     if (localUrl && localUrl != '') {
-      var parsed = JSON.parse(event.data);
-      addMessageToLog("Sending " + parsed.method + " request to: " + localUrl);
-
-      var xhr = new XMLHttpRequest();
-      var updatedUrl = localUrl.replace('localhost', 'local.waithook.com').replace('127.0.0.1', 'local.waithook.com');
-      xhr.open(parsed.method, updatedUrl, true);
-      var skipHeaders = [
-        "host", "connection", "origin", "referer", "cookie", "user-agent", "accept-encoding", "content-length"
-      ];
-      Object.keys(parsed.headers).forEach(function (key) {
-        if (skipHeaders.indexOf(key.toLowerCase()) == -1) {
-          xhr.setRequestHeader(key, parsed.headers[key]);
-        }
-      });
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4) {
-          addMessageToLog("Reponse from " + localUrl + " -> " + xhr.status + " " + xhr.statusText + " (" + xhr.responseText.length + " bytes.)");
-        }
-      };
-      xhr.send(parsed.body);
-      $xhr = xhr;
+      sendXhrToLocal(localUrl, event);
     }
 
   };
@@ -57,11 +41,15 @@ function subscribe() {
   websocket.onclose = function (event) {
     console.log("Socket Closed: ", event);
     addMessageToLog("Websocket Closed: " + JSON.stringify({code: event.code}));
+    $('#subscribe_start').value = "Subscribe";
+    $('#subscribe_start').disabled = false;
   };
 
   websocket.onopen = function () {
     console.log('Socket Status: ' + websocket.readyState + ' (open)');
     //websocket.send("Hello Server");
+    $('#subscribe_start').value = "Stop";
+    $('#subscribe_start').disabled = false;
     $('#subscribe_simulate').disabled = false;
     $('#subscribe_simulate').focus();
     /*
@@ -72,14 +60,50 @@ function subscribe() {
   };
 }
 
+function unsubscribe() {
+  websocket.close();
+  $('#subscribe_start').value = "Stopping...";
+  $('#subscribe_start').disabled = true;
+}
+
+function sendXhrToLocal(localUrl, event) {
+  var parsed = JSON.parse(event.data);
+  addMessageToLog("Sending " + parsed.method + " request to: " + localUrl);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open(parsed.method, localUrl, true);
+  var skipHeaders = [
+    "host", "connection", "origin", "referer", "cookie", "user-agent", "accept-encoding", "content-length"
+  ];
+  Object.keys(parsed.headers).forEach(function (key) {
+    if (skipHeaders.indexOf(key.toLowerCase()) == -1) {
+      xhr.setRequestHeader(key, parsed.headers[key]);
+    }
+  });
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 0) {
+        addMessageToLog("Can not send " + parsed.method + " request to " + localUrl + ". Missing <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin' target='_blank'>CORS headers<a>", false, true);
+      } else {
+        addMessageToLog("Reponse from " + localUrl + " -> " + xhr.status + " " + xhr.statusText + " (" + xhr.responseText.length + " bytes.)");
+      }
+    }
+  };
+  xhr.send(parsed.body);
+}
+
 function padNum(a, b) {
   return (1e15 + a + "").slice(-b);
 }
 
-function addMessageToLog(data, hightlight) {
+function addMessageToLog(data, hightlight, htmlSafe) {
   var line = document.createElement("DIV");
   line.className = "in";
-  line.innerText = data;
+  if (htmlSafe) {
+    line.innerHTML = data;
+  } else {
+    line.innerText = data;
+  }
   if (hightlight) {
     try {
       hljs.highlightBlock(line);
@@ -118,8 +142,11 @@ function buildQuery(params) {
 }
 
 $('#subscribe_start').addEventListener('click', function () {
-  subscribe();
-  $('#subscribe_start').disabled = true;
+  if ($('#subscribe_start').value == 'Stop') {
+    unsubscribe();
+  } else {
+    subscribe();
+  }
 }, false);
 
 $('#subscribe_simulate').addEventListener('click', function () {
@@ -153,7 +180,7 @@ $('#do_forward').addEventListener('change', function (event) {
 var onPageLoad = function () {
   // to make page laod faster
   setTimeout(function () {
-    document.querySelector('.github-btn').src = 'https://ghbtns.com/github-btn.html?user=paxa&repo=waithook&type=star&count=true';
+    //document.querySelector('.github-btn').src = 'https://ghbtns.com/github-btn.html?user=paxa&repo=waithook&type=star&count=true';
   }, 200);
 
   if (window.location) {
@@ -173,7 +200,6 @@ var onPageLoad = function () {
 
     $('#subscribe_path').value = params.path || "testing_" + Math.round(Math.random() * 1000);
     if (params.path) {
-      $('#subscribe_start').disabled = true;
       subscribe();
     }
   }
