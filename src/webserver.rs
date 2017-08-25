@@ -7,6 +7,7 @@ use std::net::Shutdown;
 use std::io::{self, Write, Read};
 use std::fs::File;
 use std::str;
+use url::Url;
 use rustc_serialize::json::Json;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
@@ -75,6 +76,10 @@ pub fn create_http_response(body: String, extra_headers: &str, compress: bool) -
     result
 }
 
+pub fn create_default_reponse() -> Vec<u8> {
+    create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
+}
+
 pub fn handle(request: RequestWrap, mut writer: WebSocketStream, sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
     let enable_compression = request.suport_gzip();
@@ -138,6 +143,42 @@ pub fn handle(request: RequestWrap, mut writer: WebSocketStream, sender: Sender<
                 Err(e) => {
                     println!("Error parsing slack message: {}", e);
                     create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
+                }
+            }
+        } else if req_url.contains("resp=") {
+            match Url::parse(&format!("http://example.com{}", &req_url)) {
+                Ok(url) => {
+                    let resp_arg = url.query_pairs().find(|ref x| x.0 == "resp" );
+                    let resp_type = url.query_pairs().find(|ref x| x.0 == "resp_type" );
+
+                    let arg_copy;
+                    let content_type = match resp_type {
+                        Some(value) => {
+                            arg_copy = value.1.into_owned();
+                            match arg_copy.as_str() {
+                                "json" => "application/json",
+                                "xml"  => "application/xml",
+                                "html" => "text/html",
+                                _      => arg_copy.as_str()
+                            }
+                        },
+                        None => {
+                            "text/plain"
+                        }
+                    };
+
+                    match resp_arg {
+                        Some(value) => {
+                            create_http_response(value.1.into_owned(), &format!("Content-Type: {}", content_type), false)
+                        },
+                        None => {
+                            create_default_reponse()
+                        }
+                    }
+                },
+                Err(e) => {
+                    println!("Error parsing resp param: {}", e);
+                    create_default_reponse()
                 }
             }
         } else {

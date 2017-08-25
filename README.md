@@ -43,6 +43,13 @@ Example of message send to websocket:
 }
 ```
 
+## URL Options
+
+* `forward=<url>` - will forward each incoming request to specified URL
+* `resp=<body>` - custom response body, default = `OK`
+* `resp_type=<type>` - content type for custom response body, default: `text/plain`,
+    has shortcuts: for `json`, `xml`, `html`, or use full value as: `resp_type=text/csv`
+
 ## Development
 
 ```
