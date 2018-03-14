@@ -42,7 +42,7 @@ pub fn create_http_response(body: String, extra_headers: &str, compress: bool) -
     let mut gzip_header = "";
 
     let body_bytes = if compress {
-        let mut e = ZlibEncoder::new(Vec::new(), Compression::Default);
+        let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
         gzip_header = "Content-Encoding: deflate\r\n";
         match e.write(body.as_bytes()) {
             Ok(_) => {},

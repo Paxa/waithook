@@ -150,7 +150,7 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
 pub fn remove_listener(ref mut subscribers_lock: &SubscribersLock, client_ip: SocketAddr) {
     println!("WS Remove {} from listeners", client_ip);
     let mut subscribers_wrap = subscribers_lock.lock().unwrap();
-    let mut listeners = subscribers_wrap.deref_mut();
+    let listeners = subscribers_wrap.deref_mut();
 
     let index = listeners.iter().position(|ref r| r.ip == client_ip );
     match index {

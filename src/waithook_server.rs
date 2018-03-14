@@ -123,7 +123,7 @@ pub fn run_server(server_port : u16) {
                 // block to make sure listeners are unblocked
                 {
                     let mut listeners_wrap = local_subscribers.lock().unwrap();
-                    let mut listeners = listeners_wrap.deref_mut();
+                    let listeners = listeners_wrap.deref_mut();
                     listeners.push(subscriber);
                 }
 
