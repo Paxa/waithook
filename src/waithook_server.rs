@@ -1,19 +1,15 @@
 use std::thread;
-use std::net::SocketAddr;
-use std::str::FromStr;
+use std::net::{SocketAddr, TcpStream};
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{self, Sender, Receiver};
-use std::time::Instant;
+use std::str;
 
-use websocket::{Message, Server, WebSocketStream};
-use websocket::Receiver as WsReceiver;
-use websocket::Sender as WsSender;
-use websocket::client::Sender as WsClientSender;
-use websocket::server::Response as WsResponse;
+use websocket::{Message, OwnedMessage};
+use websocket::sync::Server as WsServer;
+use websocket::sender::Writer as WsWriter;
 use websocket::message::Type;
 
-use hyper::header;
 use time;
 
 use webserver;
@@ -21,8 +17,9 @@ use request_wrap::RequestWrap;
 use waithook_utils;
 use waithook_stats;
 use waithook_forward;
+use hyper_utils;
 
-pub type SharedSender = Arc<Mutex<WsClientSender<WebSocketStream>>>;
+pub type SharedSender = Arc<Mutex<WsWriter<TcpStream>>>;
 pub type SubscribersLock = Arc<Mutex<Vec<Subscriber>>>;
 
 // Just wrapper, so I can remove listener from array when connection is closed
@@ -36,7 +33,7 @@ pub fn run_server(server_port : u16) {
     // Start listening for WebSocket connections
     let listen_address = format!("0.0.0.0:{}", server_port);
     println!("Starting server on {}", listen_address);
-    let ws_server = Server::bind(SocketAddr::from_str(listen_address.as_str()).unwrap()).unwrap();
+    let mut ws_server = WsServer::bind(listen_address.as_str()).unwrap();
 
     let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
@@ -48,45 +45,25 @@ pub fn run_server(server_port : u16) {
     waithook_utils::run_broadcast_broker(reciever, broker_subscribers);
     let forward_sender = waithook_forward::run_forwarder();
 
-    for connection in ws_server {
+    loop {
+        let connection_res = ws_server.accept();
+
         let local_subscribers = subscribers_shared.clone();
         let keep_alive_subscribers = subscribers_shared.clone();
         let sender = sender.clone();
         let forward_sender = forward_sender.clone();
 
         thread::spawn(move || {
-            //let request = connection.unwrap().read_request().unwrap();
-            let request = match connection.unwrap().read_request() {
-                Ok(request) => request,
-                Err(e) => {
-                    // This block should run when client disconnected and TCP socket is aware of if
-                    // if TCP connection will not raise error on disconnect then it probably will in a ping loop
-                    println!("HTTP Error reading request {:?} {}", e, e);
-                    return;
-                }
-            };
-            let headers = request.headers.clone();
-            let path = request.url.to_string();
 
-            if !headers.has::<header::Upgrade>() {
+            if connection_res.is_err() {
 
-                let web_request = RequestWrap {
-                    method: request.method.as_ref().to_string(),
-                    url: request.url.to_string(),
-                    headers: request.headers.clone(),
-                    body: request.body.clone(),
-                    client_ip: request.get_reader().peer_addr().unwrap().clone(),
-                    time: Instant::now()
-                };
+                let (tcp_stream, web_request) = hyper_utils::create_request_wrap(connection_res).unwrap();
 
-                let response = WsResponse::bad_request(request);
-                let (_, writer) = response.into_inner();
-
-                if path == "/@/stats" {
+                if web_request.url == "/@/stats" {
                     let mut listeners_wrap = local_subscribers.lock().unwrap();
-                    waithook_stats::show_stats(web_request, writer, listeners_wrap.deref_mut(), start_time);
+                    waithook_stats::show_stats(web_request, tcp_stream, listeners_wrap.deref_mut(), start_time);
                 } else {
-                    webserver::handle(web_request.clone(), writer, sender);
+                    webserver::handle(web_request.clone(), tcp_stream, sender);
                     if web_request.url != "/" && !web_request.url.starts_with("/@/") {
                         match forward_sender.send(web_request) {
                             Ok(_) => {},
@@ -96,21 +73,32 @@ pub fn run_server(server_port : u16) {
                 }
                 return;
             } else {
-                request.validate().unwrap(); // Validate the request
+                let connection = match connection_res {
+                    Ok (conn) => conn,
+                    Err(e) => {
+                        println!("Connection Accept Error {:?}", e);
+                        return;
+                    }
+                };
+                let client_ip = connection.stream.peer_addr().unwrap().clone();
+                let headers = connection.headers.clone();
+                let path = connection.uri();
 
-                let response = request.accept(); // Form a response
+                //request.validate().unwrap(); // Validate the request
 
-                let mut client = response.send().unwrap(); // Send the response
-
-                let client_ip = client.get_mut_sender()
-                    .get_mut()
-                    .peer_addr()
-                    .unwrap();
+                // Form a response
+                let client = match connection.accept() {
+                    Ok (c) => c,
+                    Err ((_, e)) => {
+                        println!("Connection Accept Error {:?} {}", e, e);
+                        return;
+                    }
+                };
 
                 println!("WS Connection from {} on {}", client_ip, path);
                 println!("WS Headers: {:?}", headers);
 
-                let (ws_sender, mut ws_receiver) = client.split();
+                let (mut ws_receiver, ws_sender) = client.split().unwrap();
 
                 let ws_sender_shared = Arc::new(Mutex::new(ws_sender));
 
@@ -129,8 +117,8 @@ pub fn run_server(server_port : u16) {
 
                 let local_ws_sender = ws_sender_shared.clone();
                 thread::spawn(move || {
-                    for message in ws_receiver.incoming_messages() {
-                        let message: Message = match message {
+                    for owned_message in ws_receiver.incoming_messages() {
+                        let owned_message: OwnedMessage = match owned_message {
                             Ok(message) => message,
                             Err(e) => {
                                 // This block should run when client disconnected and TCP socket is aware of if
@@ -141,8 +129,11 @@ pub fn run_server(server_port : u16) {
                                 break;
                             }
                         };
+                        let message = Message::from(owned_message);
+
                         if message.opcode != Type::Ping {
-                            println!("WS Got message {} {:?} {:?}", message.opcode, message.cd_status_code, message.payload);
+                            println!("WS Got message {:?} {:?} {:?}", message.opcode, message.cd_status_code, str::from_utf8(&message.payload));
+                            //println!("WS Got message {}", message.opcode());
                         }
 
                         match message.opcode {
@@ -161,8 +152,8 @@ pub fn run_server(server_port : u16) {
                             },
                             _ => {
                                 match local_ws_sender.lock().unwrap().deref_mut().send_message(&message) {
-                                    Ok(_) => { println!("WS send same ok {}", message.opcode) },
-                                    Err(e) => { println!("WS Error while sending same message {} {:?} {}", message.opcode, e, e) }
+                                    Ok(_) => { println!("WS send same ok {:?}", message.opcode) },
+                                    Err(e) => { println!("WS Error while sending same message {:?} {:?} {}", message.opcode, e, e) }
                                 }
                             }
                         }

@@ -2,12 +2,11 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
 
-use std::sync::mpsc::{Receiver};
+use std::sync::mpsc::Receiver;
 use std::ops::DerefMut;
 use std::time::Duration;
 
-use websocket::{Message};
-use websocket::Sender as WsSender;
+use websocket::Message;
 use websocket::result::WebSocketError;
 
 use request_wrap::RequestWrap;

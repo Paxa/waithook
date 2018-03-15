@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::net::Shutdown;
 use std::io::Write;
+use std::net::TcpStream;
 
-use websocket::stream::WebSocketStream;
 use time;
 
 use rustc_serialize::json;
@@ -44,7 +44,7 @@ impl Encodable for WaithookStats {
 }
 
 
-pub fn show_stats(request: RequestWrap, mut writer: WebSocketStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
+pub fn show_stats(request: RequestWrap, mut writer: TcpStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
     println!("HTTP {} {}", request.method, request.url);
     let mut listeners_hash : HashMap<String, u32> = HashMap::new();
     for i in 0..listeners.len() {

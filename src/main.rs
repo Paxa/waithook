@@ -24,8 +24,8 @@ mod waithook_utils;
 mod waithook_stats;
 mod request_wrap;
 mod waithook_forward;
+mod hyper_utils;
 mod panic_handler;
-
 
 fn main() {
     env_logger::init();
