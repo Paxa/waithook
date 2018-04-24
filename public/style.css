@@ -7,6 +7,10 @@ body {
   color: #505050;
 }
 
+a {
+  color: #3273dc;
+}
+
 .container {
   max-width: 800px;
 }
