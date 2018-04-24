@@ -1,6 +1,7 @@
 #[warn(unused_variables)]
 
 extern crate hyper;
+extern crate hyper_native_tls;
 extern crate env_logger;
 extern crate websocket;
 extern crate rustc_serialize;

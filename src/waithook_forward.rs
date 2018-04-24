@@ -6,7 +6,9 @@ use request_wrap::RequestWrap;
 
 use url::Url;
 use hyper::client::Client;
+use hyper::net::HttpsConnector;
 use hyper::header;
+use hyper_native_tls::NativeTlsClient;
 
 pub fn run_forwarder() -> Sender<RequestWrap> {
     // 5 threads to process forward requests
@@ -81,7 +83,11 @@ fn forwarder_processing(reciever: Receiver<RequestWrap>) {
 
 fn forward_request(request: RequestWrap, target: String) {
     println!("FORWARD: Sending {} request to {:?}", request.method, target);
-    let mut client = Client::new();
+
+    let ssl = NativeTlsClient::new().unwrap();
+    let connector = HttpsConnector::new(ssl);
+    let mut client = Client::with_connector(connector);
+
     client.set_read_timeout(Some(Duration::new(10, 0)));
     client.set_write_timeout(Some(Duration::new(10, 0)));
 

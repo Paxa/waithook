@@ -6,6 +6,7 @@ authors = ["Pavel Evstigneev <pavel.evst@gmail.com>"]
 [dependencies]
 env_logger = "*"
 hyper = "^0.10.6"
+hyper-native-tls = "0.2.2"
 rustc-serialize = "0.3.22"
 url = "1.7.0"
 time = "0.1.39"
