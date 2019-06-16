@@ -5,14 +5,14 @@ authors = ["Pavel Evstigneev <pavel.evst@gmail.com>"]
 
 [dependencies]
 env_logger = "*"
-hyper = "^0.10.6"
-hyper-native-tls = "0.2.2"
-rustc-serialize = "0.3.22"
-url = "1.7.0"
-time = "0.1.39"
-flate2 = "1.0.1"
+hyper = "=0.10.16"
+hyper-native-tls = "0.3.0"
+rustc-serialize = "0.3.24"
+url = "1.7.2"
+time = "0.1.42"
+flate2 = "1.0.7"
 #flate2 = { version = "0.2", features = ["zlib"], default-features = false }
-sentry-rs = "2"
+sentry = "0.15.5"
 
 [dependencies.websocket]
 git = "https://github.com/paxa/rust-websocket.git"

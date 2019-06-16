@@ -79,7 +79,7 @@ pub fn create_default_reponse() -> Vec<u8> {
 
 pub fn handle(request: RequestWrap, mut writer: TcpStream, sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
-    let enable_compression = request.suport_gzip();
+    let enable_compression = request.support_gzip();
 
     let raw_response = if request.url == "/" || request.url.starts_with("/?") {
         let body = match get_file_body("index.html") {

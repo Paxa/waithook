@@ -37,7 +37,7 @@ pub fn create_request_wrap(connection_res : AcceptResult<TcpStream>) -> Result<(
 
     let mut reader = BufReader::from_parts(tcp_stream.try_clone().unwrap(), buffer.buf, 0, last);
 
-    let Incoming { version, subject: (http_method, request_uri), headers } = parse_request(&mut reader).unwrap();
+    let Incoming { version: _, subject: (http_method, request_uri), headers } = parse_request(&mut reader).unwrap();
 
     let mut body_reader = if headers.has::<header::ContentLength>() {
         match headers.get::<header::ContentLength>() {

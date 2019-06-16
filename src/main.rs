@@ -8,7 +8,7 @@ extern crate rustc_serialize;
 extern crate flate2;
 extern crate time;
 extern crate url;
-extern crate sentry_rs;
+extern crate sentry;
 
 use std::env;
 use std::str::FromStr;
@@ -31,7 +31,7 @@ mod panic_handler;
 fn main() {
     env_logger::init();
 
-    if env::var("SENTRY_KEY").is_ok() && env::var("SENTRY_SECRET").is_ok() {
+    if env::var("SENTRY_DSN").is_ok() {
         println!("Registering panic handler...");
         panic_handler::register_sentry();
     }

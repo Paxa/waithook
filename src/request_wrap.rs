@@ -18,7 +18,7 @@ pub struct RequestWrap {
 }
 
 impl RequestWrap {
-    pub fn suport_gzip(&self) -> bool {
+    pub fn support_gzip(&self) -> bool {
         match self.headers.get() {
             Some(&header::AcceptEncoding(ref accept_encoding)) => {
                 accept_encoding.contains(&qitem(Encoding::Deflate))
