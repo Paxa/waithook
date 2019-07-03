@@ -10,6 +10,7 @@ use flate2::Compression;
 use flate2::write::ZlibEncoder;
 
 use request_wrap::RequestWrap;
+use waithook_saver;
 
 fn get_file_body(filepath: &str) -> Result<String, io::Error> {
     let filename = format!("public/{}", filepath.replace("..", ""));
@@ -77,7 +78,7 @@ pub fn create_default_reponse() -> Vec<u8> {
     create_http_response("OK\n".to_string(), "Content-Type: text/plain", false)
 }
 
-pub fn handle(request: RequestWrap, mut writer: TcpStream, sender: Sender<RequestWrap>) {
+pub fn handle(request: RequestWrap, mut writer: TcpStream, req_sender: Sender<RequestWrap>) {
     println!("HTTP {} {}", request.method, request.url);
     let enable_compression = request.support_gzip();
 
@@ -90,6 +91,27 @@ pub fn handle(request: RequestWrap, mut writer: TcpStream, sender: Sender<Reques
         };
 
         create_http_response(body, "Content-Type: text/html", enable_compression)
+
+    } else if request.url.starts_with("/@/history") {
+        let format = "Content-Type: application-json".to_string();
+        match Url::parse(&format!("http://example.com{}", &request.url)) {
+            Ok(url) => {
+                let path_arg = url.query_pairs().find(|ref x| x.0 == "path" );
+                match path_arg {
+                    Some(value) => {
+                        let history = waithook_saver::get_history(value.1.into_owned());
+                        create_http_response(history, &format, enable_compression)
+                    },
+                    None => {
+                        create_http_response("[]".to_string(), &format, enable_compression)
+                    }
+                }
+            },
+            Err(e) => {
+                create_http_response("[]".to_string(), &format, enable_compression)
+            }
+        }
+
     } else if request.url.starts_with("/@/") {
         let (_, filename) = request.url.split_at(3);
         let body = match get_file_body(filename) {
@@ -112,10 +134,15 @@ pub fn handle(request: RequestWrap, mut writer: TcpStream, sender: Sender<Reques
         }
 
         create_http_response(body, &format!("Content-Type: {}", content_type), enable_compression)
+
+    } else if request.url == "/favicon.ico" {
+        let content_type = "Content-Type: image/x-icon".to_string();
+        create_http_response("".to_string(), &content_type, enable_compression)
+
     } else {
         let req_body = request.body.clone();
         let req_url  = request.url.clone();
-        match sender.send(request) {
+        match req_sender.send(request) {
             Ok(_) => {},
             Err(e) => { println!("HTTP Channel send error: {}", e); }
         }

@@ -29,7 +29,7 @@ function subscribe() {
 
   websocket.onmessage = function (event) {
     console.log("Socket Message: " + event.data);
-    addMessageToLog(event.data, true);
+    addMessageToLog(event.data, {hightlight: true});
 
     var localUrl = $('#local_url').value;
     if (localUrl && localUrl != '') {
@@ -67,8 +67,35 @@ function subscribe() {
     }
     addMessageToLog("Subscribed to " + wsURL +
       "\nYou may send request to: " +
-      "<strong><a href='" + targetUrl + "' target='_blank'>" + targetUrl + "</a></strong>", false, true);
+      "<strong><a href='" + targetUrl + "' target='_blank'>" + targetUrl + "</a></strong>",
+      {hightlight: false, htmlSafe: true});
   };
+
+  // Load saved events
+  if (window.fetch) {
+    fetch("/@/history?path=" + path).then(function (res) {
+      res.json().then(function (parsed) {
+        console.log('res', parsed);
+        parsed.forEach(function (message) {
+          var date = new Date(message.created_at);
+          var data = {
+            method: message.method,
+            url: message.url,
+            headers: message.headers
+          };
+          if (message.body) {
+            data.body = message.body;
+          }
+          addMessageToLog(JSON.stringify(data, null, 2), {
+            hightlight: true,
+            htmlSafe: false,
+            date: date,
+            title: "(Previously Saved)"
+          });
+        });
+      });
+    });
+  }
 }
 
 function unsubscribe() {
@@ -94,9 +121,15 @@ function sendXhrToLocal(localUrl, event) {
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) {
       if (xhr.status == 0) {
-        addMessageToLog("Can not send " + parsed.method + " request to " + localUrl + ". Missing <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin' target='_blank'>CORS headers<a>", false, true);
+        addMessageToLog(
+          "Can not send " + parsed.method + " request to " + localUrl + ". " +
+          "Missing <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/"+
+          "Access-Control-Allow-Origin' target='_blank'>CORS headers<a>",
+          {hightlight: false, htmlSafe: true});
       } else {
-        addMessageToLog("Reponse from " + localUrl + " -> " + xhr.status + " " + xhr.statusText + " (" + xhr.responseText.length + " bytes.)");
+        addMessageToLog(
+          "Reponse from " + localUrl + " -> " + xhr.status + " " +
+          xhr.statusText + " (" + xhr.responseText.length + " bytes.)");
       }
     }
   };
@@ -107,15 +140,17 @@ function padNum(a, b) {
   return (1e15 + a + "").slice(-b);
 }
 
-function addMessageToLog(data, hightlight, htmlSafe) {
+function addMessageToLog(data, options) {
+  if (!options) options = {};
+
   var line = document.createElement("DIV");
   line.className = "in";
-  if (htmlSafe) {
+  if (options.htmlSafe) {
     line.innerHTML = data;
   } else {
     line.innerText = data;
   }
-  if (hightlight) {
+  if (options.hightlight) {
     try {
       hljs.highlightBlock(line);
     } catch (e) {
@@ -124,8 +159,15 @@ function addMessageToLog(data, hightlight, htmlSafe) {
       }, 10);
     }
   }
-  var date = new Date();
-  line.title = "-> @ " + [padNum(date.getHours(), 2), padNum(date.getMinutes(), 2), padNum(date.getSeconds(), 2)].join(":");
+  var date = options.date || new Date();
+  line.title = "-> @ " + [
+    padNum(date.getHours(), 2),
+    padNum(date.getMinutes(), 2),
+    padNum(date.getSeconds(), 2)
+  ].join(":");
+  if (options.title) {
+    line.title += " " + options.title;
+  }
   $('#log').appendChild(line);
 }
 

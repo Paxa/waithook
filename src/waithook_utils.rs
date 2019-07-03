@@ -2,16 +2,17 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::net::SocketAddr;
 
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{self, Sender, Receiver};
 use std::ops::DerefMut;
 use std::time::Duration;
 
 use websocket::Message;
 use websocket::result::WebSocketError;
+use rustc_serialize::json;
 
+use waithook_saver;
 use request_wrap::RequestWrap;
 use waithook_server::{SharedSender, Subscriber, SubscribersLock};
-use rustc_serialize::json;
 
 
 fn extract_path(url: String) -> String {
@@ -86,8 +87,10 @@ pub fn handle_close_message(local_ws_sender: &SharedSender, client_ip: SocketAdd
     }
 }
 
-
 pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers: Arc<Mutex<Vec<Subscriber>>>) {
+    let (save_sender, save_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
+    waithook_saver::run_request_saver(save_reciever);
+
     thread::spawn(move || {
         loop {
             let request = reciever.recv();
@@ -95,6 +98,13 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
             match request {
                 Ok(request) => {
                     println!("Got message {:?} from {:?}", request, request.client_ip);
+
+                    match save_sender.send(request.clone()) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            println!("Broker: Failed to send to saver: {}", e);
+                        }
+                    };
 
                     let mut listeners_wrap = broker_subscribers.lock().unwrap();
                     let mut listeners = listeners_wrap.deref_mut();

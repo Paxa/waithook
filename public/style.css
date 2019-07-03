@@ -152,7 +152,7 @@ code pre div {
 code pre div:before {
   content: attr(title);
   display: block;
-  width: 140px;
+  width: 240px;
   font-size: 12px;
   font-weight: bold;
   color: #5DB793;

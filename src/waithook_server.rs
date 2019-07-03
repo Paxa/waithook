@@ -35,14 +35,14 @@ pub fn run_server(server_port : u16) {
     println!("Starting server on {}", listen_address);
     let mut ws_server = WsServer::bind(listen_address.as_str()).unwrap();
 
-    let (sender, reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
+    let (req_sender, req_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
 
     let subscribers : Vec<Subscriber> = Vec::new();
     let subscribers_shared = Arc::new(Mutex::new(subscribers));
     let start_time = time::now();
 
     let broker_subscribers = subscribers_shared.clone();
-    waithook_utils::run_broadcast_broker(reciever, broker_subscribers);
+    waithook_utils::run_broadcast_broker(req_reciever, broker_subscribers);
     let forward_sender = waithook_forward::run_forwarder();
 
     loop {
@@ -50,22 +50,22 @@ pub fn run_server(server_port : u16) {
 
         let local_subscribers = subscribers_shared.clone();
         let keep_alive_subscribers = subscribers_shared.clone();
-        let sender = sender.clone();
+        let req_sender = req_sender.clone();
         let forward_sender = forward_sender.clone();
 
         thread::spawn(move || {
 
             if connection_res.is_err() {
 
-                let (tcp_stream, web_request) = hyper_utils::create_request_wrap(connection_res).unwrap();
+                let (tcp_stream, request_wrap) = hyper_utils::create_request_wrap(connection_res).unwrap();
 
-                if web_request.url == "/@/stats" {
+                if request_wrap.url == "/@/stats" {
                     let mut listeners_wrap = local_subscribers.lock().unwrap();
-                    waithook_stats::show_stats(web_request, tcp_stream, listeners_wrap.deref_mut(), start_time);
+                    waithook_stats::show_stats(request_wrap, tcp_stream, listeners_wrap.deref_mut(), start_time);
                 } else {
-                    webserver::handle(web_request.clone(), tcp_stream, sender);
-                    if web_request.url != "/" && !web_request.url.starts_with("/@/") {
-                        match forward_sender.send(web_request) {
+                    webserver::handle(request_wrap.clone(), tcp_stream, req_sender);
+                    if request_wrap.url != "/" && !request_wrap.url.starts_with("/@/") {
+                        match forward_sender.send(request_wrap) {
                             Ok(_) => {},
                             Err(e) => { println!("FORWARDER: HTTP Channel send error: {}", e); }
                         }

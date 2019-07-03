@@ -9,6 +9,8 @@ extern crate flate2;
 extern crate time;
 extern crate url;
 extern crate sentry;
+extern crate postgres;
+extern crate serde_json;
 
 use std::env;
 use std::str::FromStr;
@@ -21,6 +23,7 @@ fn get_server_port() -> u16 {
 
 mod webserver;
 mod waithook_server;
+mod waithook_saver;
 mod waithook_utils;
 mod waithook_stats;
 mod request_wrap;
