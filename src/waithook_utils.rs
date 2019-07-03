@@ -16,7 +16,7 @@ use waithook_server::{SharedSender, Subscriber, SubscribersLock};
 
 
 fn extract_path(url: String) -> String {
-    url[0 .. url.find('?').unwrap_or(url.len())].to_string()
+    url[0 .. url.find('?').unwrap_or_else(|| url.len())].to_string()
 }
 
 fn pretty_json(request: &RequestWrap) -> String {
@@ -156,7 +156,7 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
     });
 }
 
-pub fn remove_listener(ref mut subscribers_lock: &SubscribersLock, client_ip: SocketAddr) {
+pub fn remove_listener(subscribers_lock: &SubscribersLock, client_ip: SocketAddr) {
     println!("WS Remove {} from listeners", client_ip);
     let mut subscribers_wrap = subscribers_lock.lock().unwrap();
     let listeners = subscribers_wrap.deref_mut();

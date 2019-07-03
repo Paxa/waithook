@@ -44,17 +44,17 @@ impl Encodable for WaithookStats {
 }
 
 
-pub fn show_stats(request: RequestWrap, mut writer: TcpStream, listeners: &Vec<Subscriber>, start_time: time::Tm) {
+pub fn show_stats(request: RequestWrap, mut writer: TcpStream, listeners: &[Subscriber], start_time: time::Tm) {
     println!("HTTP {} {}", request.method, request.url);
     let mut listeners_hash : HashMap<String, u32> = HashMap::new();
-    for i in 0..listeners.len() {
-        if listeners_hash.contains_key(&listeners[i].path) {
-            let number = *listeners_hash.get(&listeners[i].path).unwrap();
-            listeners_hash.insert(listeners[i].path.clone(), number + 1);
+    for listener in listeners {
+        if listeners_hash.contains_key(&listener.path) {
+            let number = *listeners_hash.get(&listener.path).unwrap();
+            listeners_hash.insert(listener.path.clone(), number + 1);
         } else {
-            listeners_hash.insert(listeners[i].path.clone(), 1);
+            listeners_hash.insert(listener.path.clone(), 1);
         }
-        println!("Listener {:?} {:?}", listeners[i].ip, listeners[i].path);
+        println!("Listener {:?} {:?}", listener.ip, listener.path);
     }
     let stats = WaithookStats {
         total_listeners: listeners.len(),

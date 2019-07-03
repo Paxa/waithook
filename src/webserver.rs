@@ -107,7 +107,7 @@ pub fn handle(request: RequestWrap, mut writer: TcpStream, req_sender: Sender<Re
                     }
                 }
             },
-            Err(e) => {
+            Err(_e) => {
                 create_http_response("[]".to_string(), &format, enable_compression)
             }
         }

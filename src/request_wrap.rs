@@ -69,12 +69,12 @@ impl fmt::Debug for RequestWrap {
 impl Clone for RequestWrap {
     fn clone(&self) -> RequestWrap {
         RequestWrap {
-            method: self.method.clone(),
-            url: self.url.clone(),
-            headers: self.headers.clone(),
-            body: self.body.clone(),
-            client_ip: self.client_ip.clone(),
-            time: self.time.clone()
+            method:     self.method.clone(),
+            url:        self.url.clone(),
+            headers:    self.headers.clone(),
+            body:       self.body.clone(),
+            client_ip:  self.client_ip,
+            time:       self.time
         }
     }
 }

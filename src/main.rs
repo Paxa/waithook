@@ -1,5 +1,3 @@
-#[warn(unused_variables)]
-
 extern crate hyper;
 extern crate hyper_native_tls;
 extern crate env_logger;
@@ -17,7 +15,7 @@ use std::str::FromStr;
 
 /// Look up our server port number in PORT, for compatibility with Heroku.
 fn get_server_port() -> u16 {
-    let port_str = env::var("PORT").unwrap_or(String::new());
+    let port_str = env::var("PORT").unwrap_or_default();
     FromStr::from_str(&port_str).unwrap_or(3012)
 }
 

@@ -80,7 +80,7 @@ pub fn run_server(server_port : u16) {
                         return;
                     }
                 };
-                let client_ip = connection.stream.peer_addr().unwrap().clone();
+                let client_ip = connection.stream.peer_addr().unwrap();
                 let headers = connection.headers.clone();
                 let path = connection.uri();
 
@@ -104,7 +104,7 @@ pub fn run_server(server_port : u16) {
 
                 let subscriber = Subscriber {
                     sender: ws_sender_shared.clone(),
-                    ip: client_ip.clone(),
+                    ip: client_ip,
                     path: path.clone()
                 };
 
@@ -162,7 +162,7 @@ pub fn run_server(server_port : u16) {
 
                 // Keep alive thing
                 let ping_local_ws_sender = ws_sender_shared.clone();
-                waithook_utils::keep_alive_ping(ping_local_ws_sender, client_ip.clone(), keep_alive_subscribers);
+                waithook_utils::keep_alive_ping(ping_local_ws_sender, client_ip, keep_alive_subscribers);
             }
         });
     }

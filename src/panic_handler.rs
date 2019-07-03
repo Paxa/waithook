@@ -4,7 +4,7 @@ use std::env;
 use sentry;
 
 pub fn register_sentry() {
-    let _sentry = sentry::init(env::var("SENTRY_DSN").unwrap_or("nothing".to_owned()));
+    let _sentry = sentry::init(env::var("SENTRY_DSN").unwrap_or_else(|_| "nothing".to_owned()));
 
     sentry::integrations::panic::register_panic_handler();
 
