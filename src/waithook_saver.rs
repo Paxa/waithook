@@ -82,10 +82,19 @@ pub fn get_history(path: String) -> String {
         let res = conn.query("SELECT COALESCE(json_agg(requests), '[]'::json)::text as json_rows FROM requests where url = $1 OR url like $2 ORDER BY id", &[
             &format!("/{}", path),
             &format!("/{}?%", path)
-        ]).unwrap();
+        ]);
 
-        let json_rows: String = res.get(0).get("json_rows");
-        return json_rows;
+        match res {
+            Ok (res_data) => {
+                let json_rows: String = res_data.get(0).get("json_rows");
+                return json_rows;
+            },
+            Err(e) => {
+                println!("Error querying history: {:?}", e);
+                return "[]".to_string();
+            }
+        }
+
     } else {
         return "[]".to_string();
     }
