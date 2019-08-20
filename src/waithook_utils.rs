@@ -88,8 +88,11 @@ pub fn handle_close_message(local_ws_sender: &SharedSender, client_ip: SocketAdd
 }
 
 pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers: Arc<Mutex<Vec<Subscriber>>>) {
+    let saver_enabled = waithook_saver::saver_enabled();
     let (save_sender, save_reciever): (Sender<RequestWrap>, Receiver<RequestWrap>) = mpsc::channel();
-    waithook_saver::run_request_saver(save_reciever);
+    if saver_enabled {
+        waithook_saver::run_request_saver(save_reciever);
+    }
 
     thread::spawn(move || {
         loop {
@@ -99,12 +102,14 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
                 Ok(request) => {
                     println!("Got message {:?} from {:?}", request, request.client_ip);
 
-                    match save_sender.send(request.clone()) {
-                        Ok(_) => {},
-                        Err(e) => {
-                            println!("Broker: Failed to send to saver: {}", e);
-                        }
-                    };
+                    if saver_enabled {
+                        match save_sender.send(request.clone()) {
+                            Ok(_) => {},
+                            Err(e) => {
+                                println!("Broker: Failed to send to saver: {}", e);
+                            }
+                        };
+                    }
 
                     let mut listeners_wrap = broker_subscribers.lock().unwrap();
                     let mut listeners = listeners_wrap.deref_mut();

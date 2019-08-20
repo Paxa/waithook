@@ -32,6 +32,11 @@ mod panic_handler;
 fn main() {
     env_logger::init();
 
+    println!("Config:");
+    println!("  PORT: {}", env::var("PORT").unwrap_or_else(|_| "".to_owned() ));
+    println!("  SENTRY_DSN: {}", env::var("SENTRY_DSN").unwrap_or_else(|_| "".to_owned() ));
+    println!("  DATABASE_URL: {}", env::var("DATABASE_URL").unwrap_or_else(|_| "".to_owned() ));
+
     if env::var("SENTRY_DSN").is_ok() {
         println!("Registering panic handler...");
         panic_handler::register_sentry();

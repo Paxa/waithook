@@ -19,6 +19,10 @@ fn headers_json(headers: Headers) -> serde_json::Value {
     serde_json::to_value(headers_hash).unwrap()
 }
 
+pub fn saver_enabled() -> bool {
+    env::var("DATABASE_URL").is_ok()
+}
+
 pub fn run_request_saver(reciever: Receiver<RequestWrap>) {
     if env::var("DATABASE_URL").is_ok() {
         thread::spawn(move || {
