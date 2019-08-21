@@ -79,14 +79,27 @@ pub fn get_history(path: String) -> String {
             }
         };
 
-        let res = conn.query("SELECT COALESCE(json_agg(requests), '[]'::json)::text as json_rows FROM requests where url = $1 OR url like $2 ORDER BY id", &[
+        let res = conn.query("SELECT COALESCE(json_agg(requests), '[]'::json)::text as json_rows FROM requests where url = $1 OR url like $2 GROUP BY id ORDER BY id LIMIT 15", &[
             &format!("/{}", path),
             &format!("/{}?%", path)
         ]);
 
         match res {
             Ok (res_data) => {
-                let json_rows: String = res_data.get(0).get("json_rows");
+                // result rows contain json with array of actual row
+                // row 1 - '[{"id" 1, ...}]'
+                // row 1 - '[{"id" 2, ...}]'
+                // we asseble array of all those objects
+                // result - '[{"id" 1, ...}, {"id" 2, ...}]'
+                let mut json_rows = "[".to_string();
+                for (i, row) in res_data.iter().enumerate() {
+                    let value: String = row.get("json_rows");
+                    json_rows.push_str(&value[1..value.len() - 1]);
+                    if i < res_data.len() - 1 {
+                        json_rows.push_str(",");
+                    }
+                }
+                json_rows.push_str("]");
                 return json_rows;
             },
             Err(e) => {
