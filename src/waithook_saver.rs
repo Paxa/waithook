@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use request_wrap::RequestWrap;
 
-use postgres::{Connection, TlsMode};
+use postgres::{Client, NoTls};
 //use rustc_serialize::{Encodable, Encoder, json};
 use hyper::header::Headers;
 
@@ -26,7 +26,7 @@ pub fn saver_enabled() -> bool {
 pub fn run_request_saver(reciever: Receiver<RequestWrap>) {
     if env::var("DATABASE_URL").is_ok() {
         thread::spawn(move || {
-            let conn = match Connection::connect(env::var("DATABASE_URL").unwrap(), TlsMode::None) {
+            let mut conn = match Client::connect(env::var("DATABASE_URL").unwrap().as_str(), NoTls) {
                 Ok(c) => c,
                 Err(e) => {
                     println!("Saver: Connection Error: {:?}", e);
@@ -42,11 +42,11 @@ pub fn run_request_saver(reciever: Receiver<RequestWrap>) {
 
                 match request {
                     Ok(request) => {
-                        let sql_res = insert_stmt.execute(&[
+                        let sql_res = conn.execute(&insert_stmt, &[
                             &request.method,
                             &request.url,
                             &request.body,
-                            &headers_json(request.headers),
+                            &headers_json(request.headers).to_string(),
                             &format!("{}", request.client_ip)
                         ]);
                         match sql_res {
@@ -71,7 +71,7 @@ pub fn run_request_saver(reciever: Receiver<RequestWrap>) {
 
 pub fn get_history(path: String) -> String {
     if env::var("DATABASE_URL").is_ok() {
-        let conn = match Connection::connect(env::var("DATABASE_URL").unwrap(), TlsMode::None) {
+        let mut conn = match Client::connect(env::var("DATABASE_URL").unwrap().as_str(), NoTls) {
             Ok(c) => c,
             Err(e) => {
                 println!("Saver: Connection Error: {:?}", e);

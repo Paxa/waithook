@@ -112,7 +112,7 @@ pub fn run_broadcast_broker(reciever: Receiver<RequestWrap>, broker_subscribers:
                     }
 
                     let mut listeners_wrap = broker_subscribers.lock().unwrap();
-                    let mut listeners = listeners_wrap.deref_mut();
+                    let listeners = listeners_wrap.deref_mut();
 
                     let message_row = pretty_json(&request);
                     println!("MESSAGE: {}", message_row);
