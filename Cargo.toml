@@ -6,6 +6,7 @@ authors = ["Pavel Evstigneev <pavel.evst@gmail.com>"]
 [dependencies]
 env_logger = "*"
 hyper = "=0.10.16"
+# hyper = "=0.12.36"
 hyper-native-tls = "0.3.0"
 rustc-serialize = "0.3.25"
 url = "1.7.2"
@@ -19,6 +20,7 @@ serde_json = "1.0.40"
 [dependencies.sentry]
 version = "0.34.0"
 features = ["panic", "backtrace"]
+default-features = false
 
 [dependencies.postgres]
 version = "0.19.9"
@@ -27,5 +29,6 @@ features = ["with-serde_json-1"]
 [dependencies.websocket]
 git = "https://github.com/paxa/rust-websocket.git"
 features = ["sync"]
+default-features = false
 
 #websocket = { path = "../rust-websocket" }
