@@ -140,11 +140,25 @@ function padNum(a, b) {
   return (1e15 + a + "").slice(-b);
 }
 
+function formatJsonBody(data) {
+  try {
+    var parsedData = JSON.parse(data);
+    var parsedBody = JSON.parse(parsedData.body);
+    delete parsedData.body;
+    return `${JSON.stringify(parsedData, null, 2)}\nBody:\n${JSON.stringify(parsedBody, null, 2)}`
+  } catch (e) {
+    return data;
+  }
+}
+
 function addMessageToLog(data, options) {
   if (!options) options = {};
 
   var line = document.createElement("DIV");
   line.className = "in";
+
+  data = formatJsonBody(data);
+
   if (options.htmlSafe) {
     line.innerHTML = data;
   } else {

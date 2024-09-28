@@ -46,7 +46,7 @@ pub fn run_request_saver(reciever: Receiver<RequestWrap>) {
                             &request.method,
                             &request.url,
                             &request.body,
-                            &headers_json(request.headers).to_string(),
+                            &headers_json(request.headers),
                             &format!("{}", request.client_ip)
                         ]);
                         match sql_res {
@@ -79,7 +79,7 @@ pub fn get_history(path: String) -> String {
             }
         };
 
-        let res = conn.query("SELECT COALESCE(json_agg(requests), '[]'::json)::text as json_rows FROM requests where url = $1 OR url like $2 GROUP BY id ORDER BY id LIMIT 15", &[
+        let res = conn.query("SELECT COALESCE(json_agg(requests), '[]'::json)::text as json_rows FROM requests where url = $1 OR url like $2 GROUP BY id ORDER BY id LIMIT 100", &[
             &format!("/{}", path),
             &format!("/{}?%", path)
         ]);

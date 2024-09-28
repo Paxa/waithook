@@ -56,4 +56,59 @@ Example of message send to websocket:
 cargo run
 ```
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+## How to Run
+
+build with `cargo build`
+
+Run binary `target/debug/waithook`
+
+Env variables: (all optional)
+
+* `PORT`
+* `DATABASE_URL`
+* `SENTRY_DSN`
+
+
+Nginx config
+```
+server {
+    client_max_body_size 100M;
+    server_name waithook.ext.io;
+    listen 443 ssl http2;
+    ssl_certificate /opt/waithook.ext.io.cer;
+    ssl_certificate_key /opt/waithook.ext.io.key;
+
+    location / {
+        proxy_pass http://localhost:3012;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 60;
+        proxy_connect_timeout 60;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+    }
+}
+```
+
+**Persistance**
+
+it can save reqeust history in database, need to have postgres with table `requests`
+
+Run server with `DATABASE_URL=postgres://user:pass@localhost/waithook`
+
+Table structure:
+
+```sql
+CREATE TABLE requests (
+  id serial primary key,
+  method varchar,
+  url varchar,
+  body varchar,
+  headers jsonb,
+  sender_address varchar,
+  created_at timestamp not null
+); 
+```
